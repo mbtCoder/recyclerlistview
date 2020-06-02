@@ -21,27 +21,28 @@
 import debounce = require("lodash.debounce");
 import * as PropTypes from "prop-types";
 import * as React from "react";
-import { ObjectUtil, Default } from "ts-object-utils";
+import {ObjectUtil, Default} from "ts-object-utils";
 import ContextProvider from "./dependencies/ContextProvider";
-import { BaseDataProvider } from "./dependencies/DataProvider";
-import { Dimension, BaseLayoutProvider } from "./dependencies/LayoutProvider";
+import {BaseDataProvider} from "./dependencies/DataProvider";
+import {Dimension, BaseLayoutProvider} from "./dependencies/LayoutProvider";
 import CustomError from "./exceptions/CustomError";
 import RecyclerListViewExceptions from "./exceptions/RecyclerListViewExceptions";
-import { Point, Layout, LayoutManager } from "./layoutmanager/LayoutManager";
-import { Constants } from "./constants/Constants";
-import { Messages } from "./constants/Messages";
+import {Point, Layout, LayoutManager} from "./layoutmanager/LayoutManager";
+import {Constants} from "./constants/Constants";
+import {Messages} from "./constants/Messages";
 import BaseScrollComponent from "./scrollcomponent/BaseScrollComponent";
-import BaseScrollView, { ScrollEvent, ScrollViewDefaultProps } from "./scrollcomponent/BaseScrollView";
-import { TOnItemStatusChanged, WindowCorrection } from "./ViewabilityTracker";
-import VirtualRenderer, { RenderStack, RenderStackItem, RenderStackParams } from "./VirtualRenderer";
-import ItemAnimator, { BaseItemAnimator } from "./ItemAnimator";
-import { DebugHandlers } from "..";
-import { ComponentCompat } from "../utils/ComponentCompat";
+import BaseScrollView, {ScrollEvent, ScrollViewDefaultProps} from "./scrollcomponent/BaseScrollView";
+import {TOnItemStatusChanged, WindowCorrection} from "./ViewabilityTracker";
+import VirtualRenderer, {RenderStack, RenderStackItem, RenderStackParams} from "./VirtualRenderer";
+import ItemAnimator, {BaseItemAnimator} from "./ItemAnimator";
+import {DebugHandlers} from "..";
+import {ComponentCompat} from "../utils/ComponentCompat";
 //#if [REACT-NATIVE]
 import ScrollComponent from "../platform/reactnative/scrollcomponent/ScrollComponent";
 import ViewRenderer from "../platform/reactnative/viewrenderer/ViewRenderer";
-import { DefaultJSItemAnimator as DefaultItemAnimator } from "../platform/reactnative/itemanimators/defaultjsanimator/DefaultJSItemAnimator";
-import { Platform } from "react-native";
+import {DefaultJSItemAnimator as DefaultItemAnimator} from "../platform/reactnative/itemanimators/defaultjsanimator/DefaultJSItemAnimator";
+import {Platform, ScrollViewProps, View, StyleSheet} from "react-native";
+
 const IS_WEB = !Platform || Platform.OS === "web";
 //#endif
 
@@ -107,8 +108,15 @@ export interface RecyclerListViewProps {
     renderContentContainer?: (props?: object, children?: React.ReactNode) => React.ReactNode | null;
     //For all props that need to be proxied to inner/external scrollview. Put them in an object and they'll be spread
     //and passed down. For better typescript support.
-    scrollViewProps?: object;
+    scrollViewProps: ScrollViewProps; // 库源类型补充
     applyWindowCorrection?: (offsetX: number, offsetY: number, windowCorrection: WindowCorrection) => void;
+    /**
+     * 下拉刷新&上拉加载
+     */
+    flag?: string;
+    onRefresh?: () => void;
+    onLoadMore?: () => void;
+    useLoadMore?: boolean;
 }
 
 export interface RecyclerListViewState {
@@ -125,6 +133,26 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         isHorizontal: false,
         onEndReachedThreshold: 0,
         renderAheadOffset: IS_WEB ? 1000 : 250,
+        /**
+         * 下拉刷新&上拉加载
+         */
+        refreshedText: "释放立即刷新",
+        refreshingText: "正在刷新数据中..",
+        refreshText: "下拉可以刷新",
+        endText: "加载完成",
+        noDataText: "暂无可用数据",
+        endingText: "正在加载更多数据..",
+        indicatorArrowImg: {
+            style: {},
+            url: "",
+        },
+        indicatorImg: {
+            style: {},
+            url: "",
+        },
+        refreshType: "normal",
+        // onRefresh: ()=>void
+        useLoadMore: false,
     };
 
     public static propTypes = {};
@@ -144,9 +172,9 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         itemCount: 0,
         renderAheadOffset: 250,
     };
-    private _layout: Dimension = { height: 0, width: 0 };
+    private _layout: Dimension = {height: 0, width: 0};
     private _pendingScrollToOffset: Point | null = null;
-    private _tempDim: Dimension = { height: 0, width: 0 };
+    private _tempDim: Dimension = {height: 0, width: 0};
     private _initialOffset = 0;
     private _cachedLayouts?: Layout[];
     private _scrollComponent: BaseScrollComponent | null = null;
@@ -223,7 +251,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                         if (layoutManager) {
                             const layoutsToCache = layoutManager.getLayouts();
                             this.props.contextProvider.save(uniqueKey + Constants.CONTEXT_PROVIDER_LAYOUT_KEY_SUFFIX,
-                                JSON.stringify({ layoutArray: layoutsToCache }));
+                                JSON.stringify({layoutArray: layoutsToCache}));
                         }
                     }
                 }
@@ -274,7 +302,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
             }
             this._scrollComponent.scrollTo(x, y, animate);
         }
-    }
+    };
 
     // You can use requestAnimationFrame callback to change renderAhead in multiple frames to enable advanced progressive
     // rendering when view types are very complex. This method returns a boolean saying if the update was committed. Retry in
@@ -321,6 +349,58 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         this.setState({
             internalSnapshot: {},
         });
+    }
+
+    private renderBottomContent() {
+        const jsx: JSX.Element[] = [];
+        const indicatorStyle = {
+            position: "absolute",
+            left: -40,
+            top: -1,
+            width: 16,
+            height: 16,
+        };
+        // @ts-ignore
+        jsx.push(<Text key={2} style={{color: "#979aa0"}}>加载更多</Text>);
+
+        return jsx;
+    }
+
+    private renderIndicatorContentBottom() {
+        const jsx = [this.renderBottomContent()];
+
+        return (
+            <View style={styles.loadMore}>
+
+                {jsx.map((item, index) => {
+                    return <View key={index}>{item}</View>;
+                })}
+            </View>
+        );
+    }
+
+    /**
+     * @todo: 上拉刷新&下拉加载
+     * @function: 终止刷新
+     */
+    onRefreshEnd = (): void => {
+        this._scrollComponent &&.onRefreshEnd();
+    }
+
+    /**
+     * @todo: 上拉刷新&下拉加载
+     * @function: 数据加载完成
+     */
+    onLoadFinish(): void {
+        this._scrollComponent && this._scrollComponent.onLoadFinish();
+    }
+
+    /**
+     * @todo: 上拉刷新&下拉加载
+     * @function: 没有数据可加载
+     */
+    onNoDataToLoad(): void {
+        this._scrollComponent && this._scrollComponent.onNoDataToLoad();
     }
 
     public renderCompat(): JSX.Element {
@@ -385,7 +465,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                 if (typeof offset === "number" && offset > 0) {
                     this._initialOffset = offset;
                     if (props.onRecreate) {
-                        props.onRecreate({ lastOffset: this._initialOffset });
+                        props.onRecreate({lastOffset: this._initialOffset});
                     }
                     props.contextProvider.remove(uniqueKey + Constants.CONTEXT_PROVIDER_OFFSET_KEY_SUFFIX);
                 }
@@ -498,7 +578,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     private _renderStackWhenReady = (stack: RenderStack): void => {
         if (!this._initStateIfRequired(stack)) {
             this.setState(() => {
-                return { renderStack: stack };
+                return {renderStack: stack};
             });
         }
     }
@@ -571,22 +651,22 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
             }
             return (
                 <ViewRenderer key={key} data={data}
-                    dataHasChanged={this._dataHasChanged}
-                    x={itemRect.x}
-                    y={itemRect.y}
-                    layoutType={type}
-                    index={dataIndex}
-                    styleOverrides={styleOverrides}
-                    layoutProvider={this.props.layoutProvider}
-                    forceNonDeterministicRendering={this.props.forceNonDeterministicRendering}
-                    isHorizontal={this.props.isHorizontal}
-                    onSizeChanged={this._onViewContainerSizeChange}
-                    childRenderer={this.props.rowRenderer}
-                    height={itemRect.height}
-                    width={itemRect.width}
-                    itemAnimator={Default.value<ItemAnimator>(this.props.itemAnimator, this._defaultItemAnimator)}
-                    extendedState={this.props.extendedState}
-                    internalSnapshot={this.state.internalSnapshot} />
+                              dataHasChanged={this._dataHasChanged}
+                              x={itemRect.x}
+                              y={itemRect.y}
+                              layoutType={type}
+                              index={dataIndex}
+                              styleOverrides={styleOverrides}
+                              layoutProvider={this.props.layoutProvider}
+                              forceNonDeterministicRendering={this.props.forceNonDeterministicRendering}
+                              isHorizontal={this.props.isHorizontal}
+                              onSizeChanged={this._onViewContainerSizeChange}
+                              childRenderer={this.props.rowRenderer}
+                              height={itemRect.height}
+                              width={itemRect.width}
+                              itemAnimator={Default.value<ItemAnimator>(this.props.itemAnimator, this._defaultItemAnimator)}
+                              extendedState={this.props.extendedState}
+                              internalSnapshot={this.state.internalSnapshot}/>
             );
         }
         return null;
@@ -612,7 +692,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
             }
             this._queueStateRefresh();
         }
-    }
+    };
 
     private _checkExpectedDimensionDiscrepancy(itemRect: Dimension, type: string | number, index: number): void {
         if (this.props.layoutProvider.checkDimensionDiscrepancy(itemRect, type, index)) {
@@ -779,3 +859,46 @@ RecyclerListView.propTypes = {
     // This method exposes the windowCorrection object of RecyclerListView, user can modify the values in realtime.
     applyWindowCorrection: PropTypes.func,
 };
+
+const styles = StyleSheet.create({
+    pullRefresh: {
+        position: "absolute",
+        top: -69,
+        left: 0,
+        backfaceVisibility: "hidden",
+        right: 0,
+        height: 70,
+        backgroundColor: "#fafafa",
+        alignItems: "center",
+        justifyContent: "flex-end",
+    },
+    loadMore: {
+        height: 35,
+        backgroundColor: "#fafafa",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    text: {
+        height: 70,
+        backgroundColor: "#fafafa",
+        color: "#979aa0",
+    },
+    prText: {
+        marginBottom: 4,
+        color: "#979aa0",
+        fontSize: 12,
+    },
+
+    prState: {
+        marginBottom: 4,
+        fontSize: 12,
+        color: "#979aa0",
+    },
+    lmState: {
+        fontSize: 12,
+    },
+    indicatorContent: {
+        flexDirection: "row",
+        marginBottom: 5,
+    },
+});

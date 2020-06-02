@@ -24,7 +24,7 @@ export interface ScrollComponentProps extends CustomRefreshProps {
  */
 interface CustomRefreshProps {
     scrollViewProps: ScrollViewProps; // 库源类型补充
-    onEndReached?: ((info: { distanceFromEnd: number }) => void) | null; // 库源类型补充
+    onEndReached?: () => void; // 库源类型补充
     refreshText?: string;
     refreshingText?: string;
     endingText?: string;
@@ -61,4 +61,11 @@ interface ScrollComponentState {
 
 export default abstract class BaseScrollComponent extends React.Component<ScrollComponentProps, ScrollComponentState> {
     public abstract scrollTo(x: number, y: number, animate: boolean): void;
+
+    /**
+     *  下拉刷新&上拉加载
+     */
+    public onRefreshEnd(): void;
+    public onLoadFinish(): void;
+    public onNoDataToLoad(): void;
 }
