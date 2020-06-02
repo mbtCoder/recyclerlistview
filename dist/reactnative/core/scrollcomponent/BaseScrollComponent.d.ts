@@ -2,14 +2,15 @@ import * as React from "react";
 import { Dimension } from "../dependencies/LayoutProvider";
 import BaseScrollView, { ScrollEvent, ScrollViewDefaultProps } from "./BaseScrollView";
 import { NativeScrollEvent, NativeSyntheticEvent, ScrollViewProps, StyleProp, ViewStyle } from "react-native";
-
 export interface ScrollComponentProps extends CustomRefreshProps {
     onSizeChanged: (dimensions: Dimension) => void;
     onScroll: (offsetX: number, offsetY: number, rawEvent: ScrollEvent) => void;
     contentHeight: number;
     contentWidth: number;
     canChangeSize?: boolean;
-    externalScrollView?: { new(props: ScrollViewDefaultProps): BaseScrollView };
+    externalScrollView?: {
+        new (props: ScrollViewDefaultProps): BaseScrollView;
+    };
     isHorizontal?: boolean;
     renderFooter?: () => JSX.Element | JSX.Element[] | null;
     scrollThrottle?: number;
@@ -18,13 +19,12 @@ export interface ScrollComponentProps extends CustomRefreshProps {
     renderContentContainer?: (props?: object, children?: React.ReactNode) => React.ReactNode | null;
     renderAheadOffset: number;
 }
-
 /**
  *  下拉刷新&上拉加载 类型补充
  */
 interface CustomRefreshProps {
-    scrollViewProps: ScrollViewProps; // 库源类型补充
-    onEndReached?: () => void; // 库源类型补充
+    scrollViewProps: ScrollViewProps;
+    onEndReached?: () => void;
     refreshText?: string;
     refreshingText?: string;
     endingText?: string;
@@ -36,7 +36,7 @@ interface CustomRefreshProps {
     flag?: string;
     onScrollBeginDrag?: (event?: NativeSyntheticEvent<NativeScrollEvent>) => void;
     indicatorArrowImg?: {
-        style: StyleProp<ViewStyle>
+        style: StyleProp<ViewStyle>;
         url: string;
     };
     arrowStyle?: StyleProp<ViewStyle>;
@@ -45,7 +45,6 @@ interface CustomRefreshProps {
         url: string;
     };
 }
-
 /**
  *  下拉刷新&上拉加载 类型补充
  */
@@ -58,16 +57,13 @@ interface ScrollComponentState {
     beginScroll: boolean;
     prState: number;
 }
-
 export default abstract class BaseScrollComponent extends React.Component<ScrollComponentProps, ScrollComponentState> {
     /**
      *  下拉刷新&上拉加载
      */
-    public abstract onRefreshEnd(): void;
-
-    public abstract onLoadFinish(): void;
-
-    public abstract onNoDataToLoad(): void;
-
-    public abstract scrollTo(x: number, y: number, animate: boolean): void;
+    abstract onRefreshEnd(): void;
+    abstract onLoadFinish(): void;
+    abstract onNoDataToLoad(): void;
+    abstract scrollTo(x: number, y: number, animate: boolean): void;
 }
+export {};

@@ -1,11 +1,11 @@
 import * as React from "react";
 import {
-    Animated, Dimensions, StyleSheet, AsyncStorage,
+    Animated, Dimensions, StyleSheet, AsyncStorage, Text,
     LayoutChangeEvent,
     NativeScrollEvent,
     NativeSyntheticEvent, Platform,
     ScrollView,
-    View, Easing,
+    View, Easing, StyleProp, ViewStyle, ImageBackground, ActivityIndicator,
 } from "react-native";
 import BaseScrollComponent, { ScrollComponentProps } from "../../../core/scrollcomponent/BaseScrollComponent";
 import TSCast from "../../../utils/TSCast";
@@ -35,12 +35,12 @@ export default class ScrollComponent extends BaseScrollComponent {
      * 上拉加载&下拉刷新
      */
     private _dummyOnLayout: (event: LayoutChangeEvent) => void = TSCast.cast(null);
-    private transform;
-    private base64Icon;
-    private loadMoreHeight: number;
-    private dragFlag;
-    private prStoryKey;
-    private flag;
+    private transform: any;
+    private readonly base64Icon: any;
+    private readonly loadMoreHeight: number;
+    private dragFlag: boolean;
+    private readonly prStoryKey: string;
+    private flag: any;
     private timer: any;
 
     constructor(args: ScrollComponentProps) {
@@ -54,18 +54,19 @@ export default class ScrollComponent extends BaseScrollComponent {
          * 下拉刷新&上拉加载
          */
         this.state = {
-            prTitle: args.refreshText,
-            loadTitle: args.endingText,
+            prTitle: args.refreshText!,
+            loadTitle: args.endingText!,
             prLoading: false,
             prArrowDeg: new Animated.Value(0),
             prTimeDisplay: "暂无更新",
-            beginScroll: null,
+            beginScroll: null!,
             prState: 0,
         };
         this.flag = args.flag;
         this.prStoryKey = "prtimekey";
         this.loadMoreHeight = 60;
         this.dragFlag = false; //scrollview是否处于拖动状态的标志
+        // tslint:disable-next-line:max-line-length
         this.base64Icon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAABQBAMAAAD8TNiNAAAAJ1BMVEUAAACqqqplZWVnZ2doaGhqampoaGhpaWlnZ2dmZmZlZWVmZmZnZ2duD78kAAAADHRSTlMAA6CYqZOlnI+Kg/B86E+1AAAAhklEQVQ4y+2LvQ3CQAxGLSHEBSg8AAX0jECTnhFosgcjZKr8StE3VHz5EkeRMkF0rzk/P58k9rgOW78j+TE99OoeKpEbCvcPVDJ0OvsJ9bQs6Jxs26h5HCrlr9w8vi8zHphfmI0fcvO/ZXJG8wDzcvDFO2Y/AJj9ADE7gXmlxFMIyVpJ7DECzC9J2EC2ECAAAAAASUVORK5CYII=";
         this._onScroll = this._onScroll.bind(this);
         this._onLayout = this._onLayout.bind(this);
@@ -101,14 +102,17 @@ export default class ScrollComponent extends BaseScrollComponent {
         if (Platform.OS === "android" &&
             this.props.onRefresh) {
             this.setState({
-                prTitle: this.props.refreshingText,
+                prTitle: this.props.refreshingText!,
                 prLoading: true,
                 prArrowDeg: new Animated.Value(0),
             });
             this.timer = setTimeout(() => {
-                this._scrollViewRef &&
-                this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
-                this.timer && clearTimeout(this.timer);
+                if (this._scrollViewRef) {
+                    this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
+                }
+                if (this.timer) {
+                    clearTimeout(this.timer);
+                }
             }, 1000);
         }
     }
@@ -145,17 +149,17 @@ export default class ScrollComponent extends BaseScrollComponent {
                       horizontal={this.props.isHorizontal}
                       onScroll={this._onScroll}
                       onLayout={(!this._isSizeChangedCalledOnce || this.props.canChangeSize) ? this._onLayout : this.props.onLayout}
-                      bounces={this.props.onRefresh ? true : false}
+                      bounces={!!this.props.onRefresh}
                       onScrollEndDrag={(e) => this.onScrollEndDrag(e)}
                       onScrollBeginDrag={() => this.onScrollBeginDrag()}
-                      onMomentumScrollEnd={(e) => {
+                      onMomentumScrollEnd={(e: any) => {
                           if (Platform.OS === "android") {
-                              let target = e.nativeEvent;
-                              let y = target.contentOffset.y;
+                              const target = e.nativeEvent;
+                              const y = target.contentOffset.y;
 
                               if (y <= this.loadMoreHeight) {
                                   this.setState({
-                                      prTitle: this.props.refreshingText,
+                                      prTitle: this.props.refreshingText!,
                                       prLoading: true,
                                       prArrowDeg: new Animated.Value(0),
                                   });
@@ -167,6 +171,7 @@ export default class ScrollComponent extends BaseScrollComponent {
                         this.renderIndicatorContent() :
                         null}
                     <View style={{
+                        // tslint:disable-next-line:max-line-length
                         height: Platform.OS === "ios" ? this.props.contentHeight : (Dimensions.get("window").height - this.props.contentHeight < 0 ? this.props.contentHeight : Dimensions.get("window").height),
                         width: this.props.contentWidth,
                     }}>
@@ -182,7 +187,7 @@ export default class ScrollComponent extends BaseScrollComponent {
     }
 
     // 手指未离开
-    onScrollBeginDrag() {
+    public onScrollBeginDrag(): void {
         this.setState({
             beginScroll: true,
         });
@@ -194,37 +199,39 @@ export default class ScrollComponent extends BaseScrollComponent {
     }
 
     // 手指离开
-    onScrollEndDrag(e) {
-        let target = e.nativeEvent;
-        let y = target.contentOffset.y;
+    public onScrollEndDrag(e: any): void {
+        if (this._scrollViewRef) {
+            const target = e.nativeEvent;
+            const y = target.contentOffset.y;
 
-        this.dragFlag = false;
-        if (y <= this.loadMoreHeight && y >= 10 && Platform.OS === "android") {
-            this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
-        }
-        if (this.state.prState) {
+            this.dragFlag = false;
+            if (y <= this.loadMoreHeight && y >= 10 && Platform.OS === "android") {
+                this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
+            }
+            if (this.state.prState) {
 
-            // 回到待收起状态
-            this._scrollViewRef.scrollTo({ x: 0, y: -70, animated: true });
+                // 回到待收起状态
+                this._scrollViewRef.scrollTo({ x: 0, y: -70, animated: true });
 
-            this.setState({
-                prTitle: this.props.refreshingText,
-                prLoading: true,
-                prArrowDeg: new Animated.Value(0),
-                prState: 0,
+                this.setState({
+                    prTitle: this.props.refreshingText!,
+                    prLoading: true,
+                    prArrowDeg: new Animated.Value(0),
+                    prState: 0,
+                });
 
-            });
-
-            // 触发外部的下拉刷新方法
-            if (this.props.onRefresh) {
-                this.props.onRefresh(this);
+                // 触发外部的下拉刷新方法
+                if (this.props.onRefresh) {
+                    // @ts-ignore
+                    this.props.onRefresh(this);
+                }
             }
         }
     }
 
-    renderIndicatorContent() {
-        let type = this.props.refreshType;
-        let jsx = [this.renderNormalContent()];
+    public renderIndicatorContent(): JSX.Element {
+        const type = this.props.refreshType;
+        const jsx = [this.renderNormalContent()];
 
         return (
             <View style={Platform.OS === "ios" ? styles.pullRefresh : {
@@ -239,15 +246,15 @@ export default class ScrollComponent extends BaseScrollComponent {
         );
     }
 
-    renderNormalContent() {
+    public renderNormalContent(): any {
         this.transform = [{
             rotate: this.state.prArrowDeg.interpolate({
                 inputRange: [0, 1],
                 outputRange: ["0deg", "-180deg"],
             }),
         }];
-        let jsxarr = [];
-        let arrowStyle = {
+        const jsxarr = [];
+        let arrowStyle: StyleProp<ViewStyle> = {
             position: "absolute",
             width: 14,
             height: 23,
@@ -255,7 +262,7 @@ export default class ScrollComponent extends BaseScrollComponent {
             top: -4,
             transform: this.transform,
         };
-        let indicatorStyle = {
+        let indicatorStyle: StyleProp<ViewStyle> = {
             position: "absolute",
             left: -40,
             top: 2,
@@ -263,31 +270,31 @@ export default class ScrollComponent extends BaseScrollComponent {
             height: 16,
         };
 
-        if (this.props.indicatorImg.url) {
-            if (this.props.indicatorImg.style) {
-                indicatorStyle = this.props.indicatorImg.style;
+        if (this.props.indicatorImg!.url) {
+            if (this.props.indicatorImg!.style) {
+                indicatorStyle = this.props.indicatorImg!.style;
             }
             if (this.state.prLoading) {
-                //@ts-ignore
-                jsxarr.push(<ImageBackground style={indicatorStyle} source={{ uri: this.props.indicatorImg.url }}/>);
+                jsxarr.push(<ImageBackground style={indicatorStyle} source={{ uri: this.props.indicatorImg!.url }}/>);
             } else {
                 jsxarr.push(null);
             }
         } else if (this.state.prLoading) {
-            //@ts-ignore
+            // @ts-ignore
             jsxarr.push(<ActivityIndicator style={indicatorStyle} animated={true} color={"#488eff"}/>);
         } else {
             jsxarr.push(null);
         }
 
-        if (this.props.indicatorArrowImg.url) {
-            if (this.props.indicatorArrowImg.style) {
-                arrowStyle = this.props.arrowStyle.style;
+        if (this.props.indicatorArrowImg!.url) {
+            if (this.props.indicatorArrowImg!.style) {
+                arrowStyle = this.props.indicatorArrowImg!.style;
             }
+            // @ts-ignore
             arrowStyle.transform = this.transform;
             if (!this.state.prLoading) {
                 jsxarr.push(<Animated.Image style={arrowStyle} resizeMode={"contain"}
-                                            source={{ uri: this.props.indicatorArrowImg.url }}/>);
+                                            source={{ uri: this.props.indicatorArrowImg!.url }}/>);
             } else {
                 jsxarr.push(null);
             }
@@ -314,8 +321,8 @@ export default class ScrollComponent extends BaseScrollComponent {
 
     }
 
-    renderIndicatorContentBottom() {
-        let jsx = [this.renderBottomContent()];
+    public renderIndicatorContentBottom(): JSX.Element {
+        const jsx = [this.renderBottomContent()];
 
         return (
             <View style={styles.loadMore}>
@@ -327,9 +334,9 @@ export default class ScrollComponent extends BaseScrollComponent {
         );
     }
 
-    renderBottomContent() {
-        let jsx = [];
-        let indicatorStyle = {
+    public renderBottomContent(): JSX.Element[] {
+        const jsx = [];
+        const indicatorStyle = {
             position: "absolute",
             left: -40,
             top: -1,
@@ -339,48 +346,50 @@ export default class ScrollComponent extends BaseScrollComponent {
 
         jsx.push(<Text key={2} style={{ color: "#979aa0" }}>{this.state.loadTitle}</Text>);
 
-        return (jsx);
+        return jsx;
     }
 
     /**
      * 数据加载完成
      */
-    onLoadFinish() {
-        this.setState({ loadTitle: this.props.endText });
+    public onLoadFinish(): void {
+        this.setState({ loadTitle: this.props.endText! });
     }
 
     /**
      * 没有数据可加载
      */
-    onNoDataToLoad() {
-        this.setState({ loadTitle: this.props.noDataText });
+    public onNoDataToLoad(): void {
+        this.setState({ loadTitle: this.props.noDataText! });
     }
 
     /**
      * @function: 刷新结束
      */
-    onRefreshEnd() {
-        let now = new Date().getTime();
+    public onRefreshEnd(): void {
+        const now = new Date().getTime();
         this.setState({
-            prTitle: this.props.refreshText,
+            prTitle: this.props.refreshText!,
             prLoading: false,
             beginScroll: false,
             prTimeDisplay: dateFormat(now, "yyyy-MM-dd hh:mm"),
         });
 
         // 存一下刷新时间
-        AsyncStorage.setItem(this.prStoryKey, now.toString());
-        if (Platform.OS === "ios") {
-            this._scrollViewRef && this._scrollViewRef.scrollTo({ x: 0, y: 0, animated: true });
-        } else if (Platform.OS === "android") {
-            this._scrollViewRef && this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
+        AsyncStorage.setItem(this.prStoryKey, now.toString()).then();
+        if (this._scrollViewRef) {
+            if (Platform.OS === "ios") {
+                this._scrollViewRef.scrollTo({ x: 0, y: 0, animated: true });
+            } else if (Platform.OS === "android") {
+                this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
+            }
         }
     }
 
     // 高于临界值状态
-    upState() {
+    public upState(): void {
         this.setState({
-            prTitle: this.props.refreshedText,
+            prTitle: this.props.refreshedText!,
             prState: 1,
         });
 
@@ -392,9 +401,9 @@ export default class ScrollComponent extends BaseScrollComponent {
     }
 
     // 低于临界值状态
-    downState() {
+    public downState(): void {
         this.setState({
-            prTitle: this.props.refreshText,
+            prTitle: this.props.refreshText!,
             prState: 0,
         });
         Animated.timing(this.state.prArrowDeg, {
@@ -423,8 +432,9 @@ export default class ScrollComponent extends BaseScrollComponent {
             this.props.onScroll(contentOffset.x, contentOffset.y, event);
         }
 
-        let target = event.nativeEvent;
-        let y = target.contentOffset.y;
+        // @ts-ignore
+        const target = event.nativeEvent;
+        const y = target.contentOffset.y;
 
         if (this.dragFlag) {
             if (Platform.OS === "ios") {
@@ -442,13 +452,11 @@ export default class ScrollComponent extends BaseScrollComponent {
                     this.downState();
                 }
             }
-        }
-        //解决Android用户端迅速拉动列表手指放开的一瞬间列表还在滚动
-        else {
+        } else {
             if (y === 0 &&
                 Platform.OS === "android") {
                 this.setState({
-                    prTitle: this.props.refreshingText,
+                    prTitle: this.props.refreshingText!,
                     prLoading: true,
                     prArrowDeg: new Animated.Value(0),
 
@@ -473,11 +481,11 @@ export default class ScrollComponent extends BaseScrollComponent {
     };
 }
 
-const dateFormat = function(dateTime, fmt) {
-    let date = new Date(dateTime);
+const dateFormat = (dateTime: number, fmt: string) => {
+    const date = new Date(dateTime);
 
     let tmp = fmt || "yyyy-MM-dd";
-    let o = {
+    const o = {
         "M+": date.getMonth() + 1, //月份
         "d+": date.getDate(), //日
         "h+": date.getHours(), //小时
@@ -490,8 +498,9 @@ const dateFormat = function(dateTime, fmt) {
     if (/(y+)/.test(tmp)) {
         tmp = tmp.replace(RegExp.$1, (String(date.getFullYear())).substr(4 - RegExp.$1.length));
     }
-    for (let k in o) {
+    for (const k in o) {
         if (new RegExp("(" + k + ")").test(tmp)) {
+            // @ts-ignore
             tmp = tmp.replace(RegExp.$1, (RegExp.$1.length === 1) ? (o[k]) : (("00" + o[k]).substr((String(o[k])).length)));
         }
     }

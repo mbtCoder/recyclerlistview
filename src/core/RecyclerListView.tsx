@@ -21,22 +21,22 @@
 import debounce = require("lodash.debounce");
 import * as PropTypes from "prop-types";
 import * as React from "react";
-import {ObjectUtil, Default} from "ts-object-utils";
+import { ObjectUtil, Default } from "ts-object-utils";
 import ContextProvider from "./dependencies/ContextProvider";
-import {BaseDataProvider} from "./dependencies/DataProvider";
-import {Dimension, BaseLayoutProvider} from "./dependencies/LayoutProvider";
+import { BaseDataProvider } from "./dependencies/DataProvider";
+import { Dimension, BaseLayoutProvider } from "./dependencies/LayoutProvider";
 import CustomError from "./exceptions/CustomError";
 import RecyclerListViewExceptions from "./exceptions/RecyclerListViewExceptions";
-import {Point, Layout, LayoutManager} from "./layoutmanager/LayoutManager";
-import {Constants} from "./constants/Constants";
-import {Messages} from "./constants/Messages";
+import { Point, Layout, LayoutManager } from "./layoutmanager/LayoutManager";
+import { Constants } from "./constants/Constants";
+import { Messages } from "./constants/Messages";
 import BaseScrollComponent from "./scrollcomponent/BaseScrollComponent";
-import BaseScrollView, {ScrollEvent, ScrollViewDefaultProps} from "./scrollcomponent/BaseScrollView";
-import {TOnItemStatusChanged, WindowCorrection} from "./ViewabilityTracker";
-import VirtualRenderer, {RenderStack, RenderStackItem, RenderStackParams} from "./VirtualRenderer";
-import ItemAnimator, {BaseItemAnimator} from "./ItemAnimator";
-import {DebugHandlers} from "..";
-import {ComponentCompat} from "../utils/ComponentCompat";
+import BaseScrollView, { ScrollEvent, ScrollViewDefaultProps } from "./scrollcomponent/BaseScrollView";
+import { TOnItemStatusChanged, WindowCorrection } from "./ViewabilityTracker";
+import VirtualRenderer, { RenderStack, RenderStackItem, RenderStackParams } from "./VirtualRenderer";
+import ItemAnimator, { BaseItemAnimator } from "./ItemAnimator";
+import { DebugHandlers } from "..";
+import { ComponentCompat } from "../utils/ComponentCompat";
 //#if [REACT-NATIVE]
 import ScrollComponent from "../platform/reactnative/scrollcomponent/ScrollComponent";
 import ViewRenderer from "../platform/reactnative/viewrenderer/ViewRenderer";
@@ -51,10 +51,11 @@ const IS_WEB = !Platform || Platform.OS === "web";
  */
 
 //#if [WEB]
-//import ScrollComponent from "../platform/web/scrollcomponent/ScrollComponent";
-//import ViewRenderer from "../platform/web/viewrenderer/ViewRenderer";
-//import { DefaultWebItemAnimator as DefaultItemAnimator } from "../platform/web/itemanimators/DefaultWebItemAnimator";
-//const IS_WEB = true;
+//// import ScrollComponent from "../platform/web/scrollcomponent/ScrollComponent";
+//// import ViewRenderer from "../platform/web/viewrenderer/ViewRenderer";
+//// import { DefaultWebItemAnimator as DefaultItemAnimator } from "../platform/web/itemanimators/DefaultWebItemAnimator";
+//// const IS_WEB = true;
+//
 //#endif
 
 /***
@@ -172,9 +173,9 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         itemCount: 0,
         renderAheadOffset: 250,
     };
-    private _layout: Dimension = {height: 0, width: 0};
+    private _layout: Dimension = { height: 0, width: 0 };
     private _pendingScrollToOffset: Point | null = null;
-    private _tempDim: Dimension = {height: 0, width: 0};
+    private _tempDim: Dimension = { height: 0, width: 0 };
     private _initialOffset = 0;
     private _cachedLayouts?: Layout[];
     private _scrollComponent: BaseScrollComponent | null = null;
@@ -251,7 +252,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                         if (layoutManager) {
                             const layoutsToCache = layoutManager.getLayouts();
                             this.props.contextProvider.save(uniqueKey + Constants.CONTEXT_PROVIDER_LAYOUT_KEY_SUFFIX,
-                                JSON.stringify({layoutArray: layoutsToCache}));
+                                JSON.stringify({ layoutArray: layoutsToCache }));
                         }
                     }
                 }
@@ -302,7 +303,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
             }
             this._scrollComponent.scrollTo(x, y, animate);
         }
-    };
+    }
 
     // You can use requestAnimationFrame callback to change renderAhead in multiple frames to enable advanced progressive
     // rendering when view types are very complex. This method returns a boolean saying if the update was committed. Retry in
@@ -351,56 +352,34 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         });
     }
 
-    private renderBottomContent() {
-        const jsx: JSX.Element[] = [];
-        const indicatorStyle = {
-            position: "absolute",
-            left: -40,
-            top: -1,
-            width: 16,
-            height: 16,
-        };
-        // @ts-ignore
-        jsx.push(<Text key={2} style={{color: "#979aa0"}}>加载更多</Text>);
-
-        return jsx;
-    }
-
-    private renderIndicatorContentBottom() {
-        const jsx = [this.renderBottomContent()];
-
-        return (
-            <View style={styles.loadMore}>
-
-                {jsx.map((item, index) => {
-                    return <View key={index}>{item}</View>;
-                })}
-            </View>
-        );
-    }
-
     /**
      * @todo: 上拉刷新&下拉加载
      * @function: 终止刷新
      */
-    onRefreshEnd = (): void => {
-        this._scrollComponent &&.onRefreshEnd();
+    public onRefreshEnd = (): void => {
+        if (this._scrollComponent) {
+            this._scrollComponent.onRefreshEnd();
+        }
     }
 
     /**
      * @todo: 上拉刷新&下拉加载
      * @function: 数据加载完成
      */
-    onLoadFinish(): void {
-        this._scrollComponent && this._scrollComponent.onLoadFinish();
+    public onLoadFinish(): void {
+        if (this._scrollComponent) {
+            this._scrollComponent.onLoadFinish();
+        }
     }
 
     /**
      * @todo: 上拉刷新&下拉加载
      * @function: 没有数据可加载
      */
-    onNoDataToLoad(): void {
-        this._scrollComponent && this._scrollComponent.onNoDataToLoad();
+    public onNoDataToLoad(): void {
+        if (this._scrollComponent) {
+            this._scrollComponent.onNoDataToLoad();
+        }
     }
 
     public renderCompat(): JSX.Element {
@@ -442,6 +421,34 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         return this._virtualRenderer;
     }
 
+    private renderBottomContent(): JSX.Element[] {
+        const jsx: JSX.Element[] = [];
+        const indicatorStyle = {
+            position: "absolute",
+            left: -40,
+            top: -1,
+            width: 16,
+            height: 16,
+        };
+        // @ts-ignore
+        jsx.push(<Text key={2} style={{ color: "#979aa0" }}>加载更多</Text>);
+
+        return jsx;
+    }
+
+    private renderIndicatorContentBottom(): JSX.Element {
+        const jsx = [this.renderBottomContent()];
+
+        return (
+            <View style={styles.loadMore}>
+
+                {jsx.map((item, index) => {
+                    return <View key={index}>{item}</View>;
+                })}
+            </View>
+        );
+    }
+
     private _processInitialOffset(): void {
         if (this._pendingScrollToOffset) {
             const offset = this._pendingScrollToOffset;
@@ -465,7 +472,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                 if (typeof offset === "number" && offset > 0) {
                     this._initialOffset = offset;
                     if (props.onRecreate) {
-                        props.onRecreate({lastOffset: this._initialOffset});
+                        props.onRecreate({ lastOffset: this._initialOffset });
                     }
                     props.contextProvider.remove(uniqueKey + Constants.CONTEXT_PROVIDER_OFFSET_KEY_SUFFIX);
                 }
@@ -578,7 +585,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     private _renderStackWhenReady = (stack: RenderStack): void => {
         if (!this._initStateIfRequired(stack)) {
             this.setState(() => {
-                return {renderStack: stack};
+                return { renderStack: stack };
             });
         }
     }
@@ -692,7 +699,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
             }
             this._queueStateRefresh();
         }
-    };
+    }
 
     private _checkExpectedDimensionDiscrepancy(itemRect: Dimension, type: string | number, index: number): void {
         if (this.props.layoutProvider.checkDimensionDiscrepancy(itemRect, type, index)) {
