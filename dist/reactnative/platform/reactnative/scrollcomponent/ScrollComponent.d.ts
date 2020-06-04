@@ -1,4 +1,5 @@
 /// <reference types="react" />
+import { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import BaseScrollComponent, { ScrollComponentProps } from "../../../core/scrollcomponent/BaseScrollComponent";
 /***
  * The responsibility of a scroll component is to report its size, scroll events and provide a way to scroll to a given offset.
@@ -21,12 +22,11 @@ export default class ScrollComponent extends BaseScrollComponent {
     /**
      * 上拉加载&下拉刷新
      */
-    private _dummyOnLayout;
-    private transform;
-    private readonly base64Icon;
+    private arrowTransform;
+    private readonly defaultArrowIcon;
     private readonly loadMoreHeight;
-    private dragFlag;
-    private readonly prStoryKey;
+    private dragState;
+    private readonly prStorageKey;
     private flag;
     private timer;
     constructor(args: ScrollComponentProps);
@@ -34,15 +34,22 @@ export default class ScrollComponent extends BaseScrollComponent {
     componentDidMount(): void;
     render(): JSX.Element;
     onScrollBeginDrag(): void;
-    onScrollEndDrag(e: any): void;
-    renderIndicatorContent(): JSX.Element;
-    renderNormalContent(): any;
+    onScrollEndDrag(e: NativeSyntheticEvent<NativeScrollEvent>): void;
+    /**
+     * 下拉刷新模块
+     */
+    renderIndicatorModule(): JSX.Element;
+    renderNormalContent(): JSX.Element;
     renderIndicatorContentBottom(): JSX.Element;
     renderBottomContent(): JSX.Element[];
     /**
-     * 数据加载完成
+     *  上拉加载正常状态
      */
-    onLoadFinish(): void;
+    onLoadNormal(): void;
+    /**
+     * 上拉加载更多
+     */
+    onLoadingMore(): void;
     /**
      * 没有数据可加载
      */
@@ -55,6 +62,6 @@ export default class ScrollComponent extends BaseScrollComponent {
     downState(): void;
     private _defaultContainer;
     private _getScrollViewRef;
-    private _onScroll;
-    private _onLayout;
+    private readonly _onScroll;
+    private readonly _onLayout;
 }

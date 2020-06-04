@@ -9,7 +9,7 @@ import VirtualRenderer, { RenderStack } from "./VirtualRenderer";
 import ItemAnimator from "./ItemAnimator";
 import { DebugHandlers } from "..";
 import { ComponentCompat } from "../utils/ComponentCompat";
-import { ScrollViewProps } from "react-native";
+import { ScrollViewProps, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 /***
  * To use on web, start importing from recyclerlistview/web. To make it even easier specify an alias in you builder of choice.
  */
@@ -69,8 +69,7 @@ export interface RecyclerListViewProps {
      * 下拉刷新&上拉加载
      */
     flag?: string;
-    onRefresh?: () => void;
-    onLoadMore?: () => void;
+    onRefresh?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
     useLoadMore?: boolean;
 }
 export interface RecyclerListViewState {
@@ -89,12 +88,12 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         /**
          * 下拉刷新&上拉加载
          */
-        refreshedText: string;
-        refreshingText: string;
-        refreshText: string;
-        endText: string;
-        noDataText: string;
-        endingText: string;
+        refreshReleaseText: string;
+        refreshLoadingText: string;
+        refreshNormalText: string;
+        loadMoreNormalText: string;
+        loadMoreNoDataText: string;
+        loadMoreLoadingText: string;
         indicatorArrowImg: {
             style: {};
             url: string;
@@ -141,14 +140,19 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     forceRerender(): void;
     /**
      * @todo: 上拉刷新&下拉加载
-     * @function: 终止刷新
+     * @function: 终止x下拉刷新
      */
     onRefreshEnd: () => void;
     /**
      * @todo: 上拉刷新&下拉加载
-     * @function: 数据加载完成
+     * @function: 上拉加载更多
      */
-    onLoadFinish(): void;
+    onLoadingMore(): void;
+    /**
+     * @todo: 上拉刷新&下拉加载
+     * @function: 上拉加载正常状态
+     */
+    onLoadNormal(): void;
     /**
      * @todo: 上拉刷新&下拉加载
      * @function: 没有数据可加载

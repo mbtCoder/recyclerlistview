@@ -103,7 +103,7 @@ var RecyclerListView = /** @class */ (function (_super) {
         };
         /**
          * @todo: 上拉刷新&下拉加载
-         * @function: 终止刷新
+         * @function: 终止x下拉刷新
          */
         _this.onRefreshEnd = function () {
             if (_this._scrollComponent) {
@@ -315,11 +315,25 @@ var RecyclerListView = /** @class */ (function (_super) {
     };
     /**
      * @todo: 上拉刷新&下拉加载
-     * @function: 数据加载完成
+     * @function: 上拉加载更多
      */
-    RecyclerListView.prototype.onLoadFinish = function () {
+    RecyclerListView.prototype.onLoadingMore = function () {
+        var _this = this;
         if (this._scrollComponent) {
-            this._scrollComponent.onLoadFinish();
+            setTimeout(function () {
+                if (_this._scrollComponent) {
+                    _this._scrollComponent.onLoadingMore();
+                }
+            }, 1000);
+        }
+    };
+    /**
+     * @todo: 上拉刷新&下拉加载
+     * @function: 上拉加载正常状态
+     */
+    RecyclerListView.prototype.onLoadNormal = function () {
+        if (this._scrollComponent) {
+            this._scrollComponent.onLoadNormal();
         }
     };
     /**
@@ -589,17 +603,17 @@ var RecyclerListView = /** @class */ (function (_super) {
         initialOffset: 0,
         initialRenderIndex: 0,
         isHorizontal: false,
-        onEndReachedThreshold: 0,
+        onEndReachedThreshold: 0.01,
         renderAheadOffset: IS_WEB ? 1000 : 250,
         /**
          * 下拉刷新&上拉加载
          */
-        refreshedText: "释放立即刷新",
-        refreshingText: "正在刷新数据中..",
-        refreshText: "下拉可以刷新",
-        endText: "加载完成",
-        noDataText: "暂无可用数据",
-        endingText: "正在加载更多数据..",
+        refreshReleaseText: "释放立即刷新",
+        refreshLoadingText: "正在刷新数据中..",
+        refreshNormalText: "下拉可以刷新",
+        loadMoreNormalText: "上拉加载更多数据",
+        loadMoreNoDataText: "已经加载全部数据",
+        loadMoreLoadingText: "正在加载更多数据..",
         indicatorArrowImg: {
             style: {},
             url: "",
@@ -609,7 +623,6 @@ var RecyclerListView = /** @class */ (function (_super) {
             url: "",
         },
         refreshType: "normal",
-        // onRefresh: ()=>void
         useLoadMore: false,
     };
     RecyclerListView.propTypes = {};

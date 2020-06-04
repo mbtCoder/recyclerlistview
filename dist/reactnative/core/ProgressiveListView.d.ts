@@ -17,12 +17,12 @@ export default class ProgressiveListView extends RecyclerListView<ProgressiveLis
         initialRenderIndex: number;
         isHorizontal: boolean;
         onEndReachedThreshold: number;
-        refreshedText: string;
-        refreshingText: string;
-        refreshText: string;
-        endText: string;
-        noDataText: string;
-        endingText: string;
+        refreshReleaseText: string;
+        refreshLoadingText: string;
+        refreshNormalText: string;
+        loadMoreNormalText: string;
+        loadMoreNoDataText: string;
+        loadMoreLoadingText: string;
         indicatorArrowImg: {
             style: {};
             url: string;

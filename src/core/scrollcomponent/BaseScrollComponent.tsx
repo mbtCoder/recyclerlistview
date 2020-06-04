@@ -24,24 +24,25 @@ export interface ScrollComponentProps extends CustomRefreshProps {
  */
 interface CustomRefreshProps {
     scrollViewProps: ScrollViewProps; // 库源类型补充
-    onEndReached?: () => void; // 库源类型补充
-    refreshText?: string;
-    refreshingText?: string;
-    endingText?: string;
-    endText?: string;
-    noDataText?: string;
-    refreshedText?: string;
+    onEndReached?: () => void; // 库源类型补充 源库实际调用就是无参函数
+    refreshNormalText?: string;
+    refreshLoadingText?: string;
+    refreshReleaseText?: string;
+    loadMoreNormalText?: string;
+    loadMoreLoadingText?: string;
+    loadMoreNoDataText?: string;
     refreshType?: string;
-    onRefresh?: () => void;
+    onRefresh?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+    useLoadMore?: boolean;
     flag?: string;
     onScrollBeginDrag?: (event?: NativeSyntheticEvent<NativeScrollEvent>) => void;
     indicatorArrowImg?: {
-        style: StyleProp<ViewStyle>
+        style: ViewStyle
         url: string;
     };
     arrowStyle?: StyleProp<ViewStyle>;
     indicatorImg?: {
-        style: StyleProp<ViewStyle>;
+        style: ViewStyle;
         url: string;
     };
 }
@@ -63,10 +64,9 @@ export default abstract class BaseScrollComponent extends React.Component<Scroll
     /**
      *  下拉刷新&上拉加载
      */
+    public abstract onLoadingMore(): void;
     public abstract onRefreshEnd(): void;
-
-    public abstract onLoadFinish(): void;
-
+    public abstract onLoadNormal(): void;
     public abstract onNoDataToLoad(): void;
 
     public abstract scrollTo(x: number, y: number, animate: boolean): void;
