@@ -2,6 +2,8 @@ import * as React from "react";
 import { Dimension } from "../dependencies/LayoutProvider";
 import BaseScrollView, { ScrollEvent, ScrollViewDefaultProps } from "./BaseScrollView";
 import { NativeScrollEvent, NativeSyntheticEvent, ScrollViewProps, StyleProp, ViewStyle } from "react-native";
+import { BaseDataProvider } from "../dependencies/DataProvider";
+import { ComponentClass } from "react";
 
 export interface ScrollComponentProps extends CustomRefreshProps {
     onSizeChanged: (dimensions: Dimension) => void;
@@ -32,7 +34,8 @@ interface CustomRefreshProps {
     loadMoreLoadingText?: string;
     loadMoreNoDataText?: string;
     refreshType?: string;
-    onRefresh?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+    onRefresh?: () => void;
+    useMountRefresh?: boolean;
     useLoadMore?: boolean;
     flag?: string;
     onScrollBeginDrag?: (event?: NativeSyntheticEvent<NativeScrollEvent>) => void;
@@ -45,6 +48,8 @@ interface CustomRefreshProps {
         style: ViewStyle;
         url: string;
     };
+   dataProvider: BaseDataProvider;
+   ListEmptyComponent?: ComponentClass;
 }
 
 /**

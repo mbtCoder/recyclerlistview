@@ -41,6 +41,7 @@ import { ComponentCompat } from "../utils/ComponentCompat";
 import ScrollComponent from "../platform/reactnative/scrollcomponent/ScrollComponent";
 import ViewRenderer from "../platform/reactnative/viewrenderer/ViewRenderer";
 import { Platform, ScrollViewProps, View, StyleSheet, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
+import { ComponentClass } from "react";
 
 const IS_WEB = !Platform || Platform.OS === "web";
 //#endif
@@ -114,8 +115,9 @@ export interface RecyclerListViewProps {
      * 下拉刷新&上拉加载
      */
     flag?: string;
-    onRefresh?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+    onRefresh?: () => void;
     useLoadMore?: boolean;
+    ListEmptyComponent?: ComponentClass;
 }
 
 export interface RecyclerListViewState {
@@ -151,6 +153,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         },
         refreshType: "normal",
         useLoadMore: false,
+        useMountRefresh: false,
     };
 
     public static propTypes = {};
@@ -227,7 +230,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         this._processOnEndReached();
         this._checkAndChangeLayouts(this.props);
         if (this.props.dataProvider.getSize() === 0) {
-            console.warn(Messages.WARN_NO_DATA); //tslint:disable-line
+            // console.warn(Messages.WARN_NO_DATA); //tslint:disable-line
         }
     }
 
@@ -300,7 +303,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
             }
             this._scrollComponent.scrollTo(x, y, animate);
         }
-    }
+    };
 
     // You can use requestAnimationFrame callback to change renderAhead in multiple frames to enable advanced progressive
     // rendering when view types are very complex. This method returns a boolean saying if the update was committed. Retry in
@@ -357,7 +360,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         if (this._scrollComponent) {
             this._scrollComponent.onRefreshEnd();
         }
-    }
+    };
 
     /**
      * @todo: 上拉刷新&下拉加载
@@ -431,35 +434,6 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     protected getVirtualRenderer(): VirtualRenderer {
         return this._virtualRenderer;
     }
-
-    private renderBottomContent(): JSX.Element[] {
-        const jsx: JSX.Element[] = [];
-        const indicatorStyle = {
-            position: "absolute",
-            left: -40,
-            top: -1,
-            width: 16,
-            height: 16,
-        };
-        // @ts-ignore
-        jsx.push(<Text key={2} style={{ color: "#979aa0" }}>加载更多</Text>);
-
-        return jsx;
-    }
-
-    private renderIndicatorContentBottom(): JSX.Element {
-        const jsx = [this.renderBottomContent()];
-
-        return (
-            <View style={styles.loadMore}>
-
-                {jsx.map((item, index) => {
-                    return <View key={index}>{item}</View>;
-                })}
-            </View>
-        );
-    }
-
     private _processInitialOffset(): void {
         if (this._pendingScrollToOffset) {
             const offset = this._pendingScrollToOffset;
@@ -580,7 +554,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                 this._refreshViewability();
             }
         }
-    }
+    };
 
     private _initStateIfRequired(stack?: RenderStack): boolean {
         if (!this.state) {
@@ -599,7 +573,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                 return { renderStack: stack };
             });
         }
-    }
+    };
 
     private _initTrackers(props: RecyclerListViewProps): void {
         this._assertDependencyPresence(props);
@@ -652,7 +626,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
 
     private _dataHasChanged = (row1: any, row2: any): boolean => {
         return this.props.dataProvider.rowHasChanged(row1, row2);
-    }
+    };
 
     private _renderRowUsingMeta(itemMeta: RenderStackItem): JSX.Element | null {
         const dataSize = this.props.dataProvider.getSize();
@@ -741,7 +715,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
             this.props.onScroll(rawEvent, offsetX, offsetY);
         }
         this._processOnEndReached();
-    }
+    };
 
     private _processOnEndReached(): void {
         if (this.props.onEndReached && this._virtualRenderer) {
@@ -753,7 +727,9 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                 if (windowBound - lastOffset <= Default.value<number>(this.props.onEndReachedThreshold, 0)) {
                     if (this.props.onEndReached && !this._onEndReachedCalled) {
                         this._onEndReachedCalled = true;
-                        this.props.onEndReached();
+                        if (this.props.useLoadMore) {
+                            this.props.onEndReached();
+                        } // 开放接口判断何时不处理上拉加载
                     }
                 } else {
                     this._onEndReachedCalled = false;
@@ -877,46 +853,3 @@ RecyclerListView.propTypes = {
     // This method exposes the windowCorrection object of RecyclerListView, user can modify the values in realtime.
     applyWindowCorrection: PropTypes.func,
 };
-
-const styles = StyleSheet.create({
-    pullRefresh: {
-        position: "absolute",
-        top: -69,
-        left: 0,
-        backfaceVisibility: "hidden",
-        right: 0,
-        height: 70,
-        backgroundColor: "#fafafa",
-        alignItems: "center",
-        justifyContent: "flex-end",
-    },
-    loadMore: {
-        height: 35,
-        backgroundColor: "#fafafa",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    text: {
-        height: 70,
-        backgroundColor: "#fafafa",
-        color: "#979aa0",
-    },
-    prText: {
-        marginBottom: 4,
-        color: "#979aa0",
-        fontSize: 12,
-    },
-
-    prState: {
-        marginBottom: 4,
-        fontSize: 12,
-        color: "#979aa0",
-    },
-    lmState: {
-        fontSize: 12,
-    },
-    indicatorContent: {
-        flexDirection: "row",
-        marginBottom: 5,
-    },
-});

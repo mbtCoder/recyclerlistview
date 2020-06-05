@@ -1,6 +1,6 @@
 import * as React from "react";
 import {
-    Animated, Dimensions, StyleSheet, AsyncStorage, Text,
+    Animated, Dimensions, StyleSheet, Text,
     LayoutChangeEvent,
     NativeScrollEvent,
     NativeSyntheticEvent, Platform,
@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import BaseScrollComponent, { ScrollComponentProps } from "../../../core/scrollcomponent/BaseScrollComponent";
 import TSCast from "../../../utils/TSCast";
+import AsyncStorage from "@react-native-community/async-storage";
 
 /***
  * The responsibility of a scroll component is to report its size, scroll events and provide a way to scroll to a given offset.
@@ -103,13 +104,21 @@ export default class ScrollComponent extends BaseScrollComponent {
     // }
 
     public componentDidMount(): void {
-        if (Platform.OS === "android" &&
-            this.props.onRefresh) {
+        // 首次加载刷新
+        if (this.props.onRefresh && this.props.useMountRefresh) {
             this.setState({
                 prTitle: this.props.refreshLoadingText!,
                 prLoading: true,
                 prArrowDeg: new Animated.Value(0),
             });
+
+            if (Platform.OS === "ios" && this._scrollViewRef) {
+                this._scrollViewRef.scrollTo({ x: 0, y: -60, animated: true });
+            }
+            this.props.onRefresh();
+        } else if (Platform.OS === "android") {
+            // 不需要首次刷新
+            // 安卓首次挂载 会显示刷新界面需要ScrollTo到默认位置
             this.timer = setTimeout(() => {
                 if (this._scrollViewRef) {
                     this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
@@ -117,8 +126,24 @@ export default class ScrollComponent extends BaseScrollComponent {
                 if (this.timer) {
                     clearTimeout(this.timer);
                 }
-            }, 1000);
+            }, 1);
         }
+        // if (Platform.OS === "android" &&
+        //   this.props.onRefresh) {
+        //   this.setState({
+        //     prTitle: this.props.refreshLoadingText!,
+        //     prLoading: true,
+        //     prArrowDeg: new Animated.Value(0),
+        //   });
+        //   this.timer = setTimeout(() => {
+        //     if (this._scrollViewRef) {
+        //       this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
+        //     }
+        //     if (this.timer) {
+        //       clearTimeout(this.timer);
+        //     }
+        //   }, 1000);
+        // }
     }
 
     public render(): JSX.Element {
@@ -154,8 +179,9 @@ export default class ScrollComponent extends BaseScrollComponent {
                       onScroll={this._onScroll}
                       onLayout={(!this._isSizeChangedCalledOnce || this.props.canChangeSize) ? this._onLayout : this.props.onLayout}
                       bounces={!!this.props.onRefresh}
-                      onScrollEndDrag={(e) => this.onScrollEndDrag(e!)}
-                      onScrollBeginDrag={() => this.onScrollBeginDrag()}
+                      scrollToOverflowEnabled
+                      onScrollEndDrag={(e: any) => this.onScrollEndDrag(e!)}
+                      onScrollBeginDrag={(e: any) => this.onScrollBeginDrag(e)}
                       onMomentumScrollEnd={(e: any) => {
                           if (Platform.OS === "android") {
                               const target = e.nativeEvent;
@@ -171,16 +197,20 @@ export default class ScrollComponent extends BaseScrollComponent {
                           }
                       }}>
                 <View style={{ flexDirection: this.props.isHorizontal ? "row" : "column" }}>
-                    {this.props.onRefresh ?
-                        this.renderIndicatorModule() :
-                        null}
-                    <View style={{
-                        // tslint:disable-next-line:max-line-length
-                        height: Platform.OS === "ios" ? this.props.contentHeight : (Dimensions.get("window").height - this.props.contentHeight < 0 ? this.props.contentHeight : Dimensions.get("window").height),
-                        width: this.props.contentWidth,
-                    }}>
-                        {renderContentContainer(contentContainerProps, this.props.children)}
-                    </View>
+                    {this.props.onRefresh ? this.renderIndicatorModule() : null}
+
+                    {this.props.ListEmptyComponent && this.props.dataProvider.getSize() === 0 ?
+                        <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}>
+                            {this.renderListEmptyComponent()}
+                        </View> :
+                        <View style={{
+                            // tslint:disable-next-line:max-line-length
+                            height: Platform.OS === "ios" ? this.props.contentHeight : (SCREEN_HEIGHT - this.props.contentHeight < 0 ? this.props.contentHeight : SCREEN_HEIGHT),
+                            width: this.props.contentWidth,
+                        }}>
+                            {renderContentContainer(contentContainerProps, this.props.children)}
+                        </View>}
+
                     {this.props.renderFooter ? this.props.renderFooter() : null}
 
                     {this.props.useLoadMore && this.props.onEndReached ? this.renderIndicatorContentBottom() : null}
@@ -189,15 +219,27 @@ export default class ScrollComponent extends BaseScrollComponent {
         );
     }
 
+    public renderListEmptyComponent(): JSX.Element {
+        const { ListEmptyComponent } = this.props;
+        const element = React.isValidElement(
+            ListEmptyComponent,
+        ) ? (
+            ListEmptyComponent
+        ) : (
+            <ListEmptyComponent/>
+        );
+        return element;
+    }
+
     // 手指未离开
-    public onScrollBeginDrag(): void {
+    public onScrollBeginDrag(e: NativeSyntheticEvent<NativeScrollEvent>): void {
         this.setState({
             beginScroll: true,
         });
         this.dragState = true;
 
         if (this.props.onScrollBeginDrag) {
-            this.props.onScrollBeginDrag();
+            this.props.onScrollBeginDrag(e);
         }
     }
 
@@ -214,7 +256,7 @@ export default class ScrollComponent extends BaseScrollComponent {
             if (this.state.prState) {
 
                 // 回到待收起状态
-                this._scrollViewRef.scrollTo({ x: 0, y: -70, animated: true });
+                this._scrollViewRef.scrollTo({ x: 0, y: -60, animated: true });
 
                 this.setState({
                     prTitle: this.props.refreshLoadingText!,
@@ -225,7 +267,7 @@ export default class ScrollComponent extends BaseScrollComponent {
 
                 // 触发外部的下拉刷新
                 if (this.props.onRefresh) {
-                    this.props.onRefresh(e);
+                    this.props.onRefresh();
                 }
             }
         }
@@ -240,8 +282,9 @@ export default class ScrollComponent extends BaseScrollComponent {
 
         return (
             <View style={Platform.OS === "ios" ? styles.pullRefresh : {
-                width: Dimensions.get("window").width,
+                width: SCREEN_WIDTH,
                 height: this.loadMoreHeight,
+                justifyContent: "center",
             }}>
 
                 {jsx.map((item, index) => {
@@ -407,6 +450,7 @@ export default class ScrollComponent extends BaseScrollComponent {
         });
 
         Animated.timing(this.state.prArrowDeg, {
+            useNativeDriver: true,
             toValue: 1,
             duration: 100,
             easing: Easing.inOut(Easing.quad),
@@ -420,6 +464,7 @@ export default class ScrollComponent extends BaseScrollComponent {
             prState: 0,
         });
         Animated.timing(this.state.prArrowDeg, {
+            useNativeDriver: true,
             toValue: 0,
             duration: 100,
             easing: Easing.inOut(Easing.quad),
@@ -436,7 +481,7 @@ export default class ScrollComponent extends BaseScrollComponent {
 
     private _getScrollViewRef = (scrollView: any) => {
         this._scrollViewRef = scrollView as (ScrollView | null);
-    }
+    };
 
     private readonly _onScroll = (event?: NativeSyntheticEvent<NativeScrollEvent>): void => {
         if (event) {
@@ -451,7 +496,7 @@ export default class ScrollComponent extends BaseScrollComponent {
 
         if (this.dragState) {
             if (Platform.OS === "ios") {
-                if (y <= -70) {
+                if (y <= -60) {
                     this.upState();
 
                 } else {
@@ -477,7 +522,7 @@ export default class ScrollComponent extends BaseScrollComponent {
                 this.onRefreshEnd();
             }
         }
-    }
+    };
 
     private readonly _onLayout = (event: LayoutChangeEvent): void => {
         if (this._height !== event.nativeEvent.layout.height || this._width !== event.nativeEvent.layout.width) {
@@ -491,8 +536,11 @@ export default class ScrollComponent extends BaseScrollComponent {
         if (this.props.onLayout) {
             this.props.onLayout(event);
         }
-    }
+    };
 }
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 const dateFormat = (dateTime: number, fmt: string) => {
     const date = new Date(dateTime);
@@ -523,13 +571,13 @@ const dateFormat = (dateTime: number, fmt: string) => {
 const styles = StyleSheet.create({
     pullRefresh: {
         position: "absolute",
-        top: -69,
+        top: -60,
         left: 0,
         backfaceVisibility: "hidden",
         right: 0,
-        height: 70,
+        height: 60,
         alignItems: "center",
-        justifyContent: "flex-end",
+        justifyContent: "center",
     },
     loadMore: {
         height: 35,
