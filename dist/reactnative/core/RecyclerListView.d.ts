@@ -70,6 +70,10 @@ export interface RecyclerListViewProps {
      * 下拉刷新&上拉加载
      */
     flag?: string;
+    onLoadingMore?: () => void;
+    onRefreshEnd?: () => void;
+    onLoadNormal?: () => void;
+    onNoDataToLoad?: () => void;
     onRefresh?: () => void;
     useLoadMore?: boolean;
     ListEmptyComponent?: ComponentClass;
