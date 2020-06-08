@@ -115,6 +115,10 @@ export interface RecyclerListViewProps {
      * 下拉刷新&上拉加载
      */
     flag?: string;
+    onLoadingMore?: () => void;
+    onRefreshEnd?: () => void;
+    onLoadNormal?: () => void;
+    onNoDataToLoad?: () => void;
     onRefresh?: () => void;
     useLoadMore?: boolean;
     ListEmptyComponent?: ComponentClass;
@@ -435,6 +439,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     protected getVirtualRenderer(): VirtualRenderer {
         return this._virtualRenderer;
     }
+
     private _processInitialOffset(): void {
         if (this._pendingScrollToOffset) {
             const offset = this._pendingScrollToOffset;
