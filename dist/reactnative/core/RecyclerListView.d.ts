@@ -9,7 +9,8 @@ import VirtualRenderer, { RenderStack } from "./VirtualRenderer";
 import ItemAnimator from "./ItemAnimator";
 import { DebugHandlers } from "..";
 import { ComponentCompat } from "../utils/ComponentCompat";
-import { ScrollViewProps, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
+import { ScrollViewProps } from "react-native";
+import { ComponentClass } from "react";
 /***
  * To use on web, start importing from recyclerlistview/web. To make it even easier specify an alias in you builder of choice.
  */
@@ -69,8 +70,9 @@ export interface RecyclerListViewProps {
      * 下拉刷新&上拉加载
      */
     flag?: string;
-    onRefresh?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+    onRefresh?: () => void;
     useLoadMore?: boolean;
+    ListEmptyComponent?: ComponentClass;
 }
 export interface RecyclerListViewState {
     renderStack: RenderStack;
@@ -104,6 +106,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         };
         refreshType: string;
         useLoadMore: boolean;
+        useMountRefresh: boolean;
     };
     static propTypes: {};
     private refreshRequestDebouncer;
@@ -160,8 +163,6 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     onNoDataToLoad(): void;
     renderCompat(): JSX.Element;
     protected getVirtualRenderer(): VirtualRenderer;
-    private renderBottomContent;
-    private renderIndicatorContentBottom;
     private _processInitialOffset;
     private _getContextFromContextProvider;
     private _checkAndChangeLayouts;

@@ -179,7 +179,6 @@ export default class ScrollComponent extends BaseScrollComponent {
                       onScroll={this._onScroll}
                       onLayout={(!this._isSizeChangedCalledOnce || this.props.canChangeSize) ? this._onLayout : this.props.onLayout}
                       bounces={!!this.props.onRefresh}
-                      scrollToOverflowEnabled
                       onScrollEndDrag={(e: any) => this.onScrollEndDrag(e!)}
                       onScrollBeginDrag={(e: any) => this.onScrollBeginDrag(e)}
                       onMomentumScrollEnd={(e: any) => {
@@ -226,6 +225,7 @@ export default class ScrollComponent extends BaseScrollComponent {
         ) ? (
             ListEmptyComponent
         ) : (
+            // @ts-ignore
             <ListEmptyComponent/>
         );
         return element;

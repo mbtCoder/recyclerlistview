@@ -217,7 +217,7 @@ var RecyclerListView = /** @class */ (function (_super) {
         this._processOnEndReached();
         this._checkAndChangeLayouts(this.props);
         if (this.props.dataProvider.getSize() === 0) {
-            console.warn(Messages_1.Messages.WARN_NO_DATA); //tslint:disable-line
+            // console.warn(Messages.WARN_NO_DATA); //tslint:disable-line
         }
     };
     RecyclerListView.prototype.componentDidMount = function () {
@@ -365,29 +365,10 @@ var RecyclerListView = /** @class */ (function (_super) {
         //     ...props,
         // } = this.props;
         var _this = this;
-        return (React.createElement(ScrollComponent_1.default, __assign({ ref: function (scrollComponent) { return _this._scrollComponent = scrollComponent; } }, this.props, this.props.scrollViewProps, { onScroll: this._onScroll, onSizeChanged: this._onSizeChanged, contentHeight: this._initComplete ? this._virtualRenderer.getLayoutDimension().height : 0, contentWidth: this._initComplete ? this._virtualRenderer.getLayoutDimension().width : 0, renderAheadOffset: this.getCurrentRenderAheadOffset() }), this._generateRenderStack()));
+        return (React.createElement(ScrollComponent_1.default, __assign({ ref: function (scrollComponent) { return _this._scrollComponent = scrollComponent; } }, this.props, this.props.scrollViewProps, { onScroll: this._onScroll, scrollToOverflowEnabled: true, onSizeChanged: this._onSizeChanged, contentHeight: this._initComplete ? this._virtualRenderer.getLayoutDimension().height : 0, contentWidth: this._initComplete ? this._virtualRenderer.getLayoutDimension().width : 0, renderAheadOffset: this.getCurrentRenderAheadOffset() }), this._generateRenderStack()));
     };
     RecyclerListView.prototype.getVirtualRenderer = function () {
         return this._virtualRenderer;
-    };
-    RecyclerListView.prototype.renderBottomContent = function () {
-        var jsx = [];
-        var indicatorStyle = {
-            position: "absolute",
-            left: -40,
-            top: -1,
-            width: 16,
-            height: 16,
-        };
-        // @ts-ignore
-        jsx.push(React.createElement(Text, { key: 2, style: { color: "#979aa0" } }, "\u52A0\u8F7D\u66F4\u591A"));
-        return jsx;
-    };
-    RecyclerListView.prototype.renderIndicatorContentBottom = function () {
-        var jsx = [this.renderBottomContent()];
-        return (React.createElement(react_native_1.View, { style: styles.loadMore }, jsx.map(function (item, index) {
-            return React.createElement(react_native_1.View, { key: index }, item);
-        })));
     };
     RecyclerListView.prototype._processInitialOffset = function () {
         var _this = this;
@@ -588,7 +569,9 @@ var RecyclerListView = /** @class */ (function (_super) {
                 if (windowBound - lastOffset <= ts_object_utils_1.Default.value(this.props.onEndReachedThreshold, 0)) {
                     if (this.props.onEndReached && !this._onEndReachedCalled) {
                         this._onEndReachedCalled = true;
-                        this.props.onEndReached();
+                        if (this.props.useLoadMore) {
+                            this.props.onEndReached();
+                        } // 开放接口判断何时不处理上拉加载
                     }
                 }
                 else {
@@ -624,6 +607,7 @@ var RecyclerListView = /** @class */ (function (_super) {
         },
         refreshType: "normal",
         useLoadMore: false,
+        useMountRefresh: false,
     };
     RecyclerListView.propTypes = {};
     return RecyclerListView;
@@ -715,45 +699,4 @@ RecyclerListView.propTypes = {
     // This method exposes the windowCorrection object of RecyclerListView, user can modify the values in realtime.
     applyWindowCorrection: PropTypes.func,
 };
-var styles = react_native_1.StyleSheet.create({
-    pullRefresh: {
-        position: "absolute",
-        top: -69,
-        left: 0,
-        backfaceVisibility: "hidden",
-        right: 0,
-        height: 70,
-        backgroundColor: "#fafafa",
-        alignItems: "center",
-        justifyContent: "flex-end",
-    },
-    loadMore: {
-        height: 35,
-        backgroundColor: "#fafafa",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    text: {
-        height: 70,
-        backgroundColor: "#fafafa",
-        color: "#979aa0",
-    },
-    prText: {
-        marginBottom: 4,
-        color: "#979aa0",
-        fontSize: 12,
-    },
-    prState: {
-        marginBottom: 4,
-        fontSize: 12,
-        color: "#979aa0",
-    },
-    lmState: {
-        fontSize: 12,
-    },
-    indicatorContent: {
-        flexDirection: "row",
-        marginBottom: 5,
-    },
-});
 //# sourceMappingURL=RecyclerListView.js.map

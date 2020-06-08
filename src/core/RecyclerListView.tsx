@@ -422,6 +422,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                 {...this.props}
                 {...this.props.scrollViewProps}
                 onScroll={this._onScroll}
+                scrollToOverflowEnabled
                 onSizeChanged={this._onSizeChanged}
                 contentHeight={this._initComplete ? this._virtualRenderer.getLayoutDimension().height : 0}
                 contentWidth={this._initComplete ? this._virtualRenderer.getLayoutDimension().width : 0}

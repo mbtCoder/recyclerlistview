@@ -28,6 +28,7 @@ var React = require("react");
 var react_native_1 = require("react-native");
 var BaseScrollComponent_1 = require("../../../core/scrollcomponent/BaseScrollComponent");
 var TSCast_1 = require("../../../utils/TSCast");
+var async_storage_1 = require("@react-native-community/async-storage");
 /***
  * The responsibility of a scroll component is to report its size, scroll events and provide a way to scroll to a given offset.
  * RecyclerListView works on top of this interface and doesn't care about the implementation. To support web we only had to provide
@@ -52,7 +53,7 @@ var ScrollComponent = /** @class */ (function (_super) {
             var y = target.contentOffset.y;
             if (_this.dragState) {
                 if (react_native_1.Platform.OS === "ios") {
-                    if (y <= -70) {
+                    if (y <= -60) {
                         _this.upState();
                     }
                     else {
@@ -149,13 +150,21 @@ var ScrollComponent = /** @class */ (function (_super) {
     // }
     ScrollComponent.prototype.componentDidMount = function () {
         var _this = this;
-        if (react_native_1.Platform.OS === "android" &&
-            this.props.onRefresh) {
+        // 首次加载刷新
+        if (this.props.onRefresh && this.props.useMountRefresh) {
             this.setState({
                 prTitle: this.props.refreshLoadingText,
                 prLoading: true,
                 prArrowDeg: new react_native_1.Animated.Value(0),
             });
+            if (react_native_1.Platform.OS === "ios" && this._scrollViewRef) {
+                this._scrollViewRef.scrollTo({ x: 0, y: -60, animated: true });
+            }
+            this.props.onRefresh();
+        }
+        else if (react_native_1.Platform.OS === "android") {
+            // 不需要首次刷新
+            // 安卓首次挂载 会显示刷新界面需要ScrollTo到默认位置
             this.timer = setTimeout(function () {
                 if (_this._scrollViewRef) {
                     _this._scrollViewRef.scrollTo({ x: 0, y: _this.loadMoreHeight, animated: true });
@@ -163,8 +172,24 @@ var ScrollComponent = /** @class */ (function (_super) {
                 if (_this.timer) {
                     clearTimeout(_this.timer);
                 }
-            }, 1000);
+            }, 1);
         }
+        // if (Platform.OS === "android" &&
+        //   this.props.onRefresh) {
+        //   this.setState({
+        //     prTitle: this.props.refreshLoadingText!,
+        //     prLoading: true,
+        //     prArrowDeg: new Animated.Value(0),
+        //   });
+        //   this.timer = setTimeout(() => {
+        //     if (this._scrollViewRef) {
+        //       this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
+        //     }
+        //     if (this.timer) {
+        //       clearTimeout(this.timer);
+        //     }
+        //   }, 1000);
+        // }
     };
     ScrollComponent.prototype.render = function () {
         var _this = this;
@@ -191,7 +216,7 @@ var ScrollComponent = /** @class */ (function (_super) {
         //     scrollThrottle,
         //     ...props,
         // } = this.props;
-        return (React.createElement(Scroller, __assign({ ref: this._getScrollViewRef, removeClippedSubviews: false, scrollEventThrottle: this.props.scrollThrottle }, this.props, { horizontal: this.props.isHorizontal, onScroll: this._onScroll, onLayout: (!this._isSizeChangedCalledOnce || this.props.canChangeSize) ? this._onLayout : this.props.onLayout, bounces: !!this.props.onRefresh, onScrollEndDrag: function (e) { return _this.onScrollEndDrag(e); }, onScrollBeginDrag: function () { return _this.onScrollBeginDrag(); }, onMomentumScrollEnd: function (e) {
+        return (React.createElement(Scroller, __assign({ ref: this._getScrollViewRef, removeClippedSubviews: false, scrollEventThrottle: this.props.scrollThrottle }, this.props, { horizontal: this.props.isHorizontal, onScroll: this._onScroll, onLayout: (!this._isSizeChangedCalledOnce || this.props.canChangeSize) ? this._onLayout : this.props.onLayout, bounces: !!this.props.onRefresh, onScrollEndDrag: function (e) { return _this.onScrollEndDrag(e); }, onScrollBeginDrag: function (e) { return _this.onScrollBeginDrag(e); }, onMomentumScrollEnd: function (e) {
                 if (react_native_1.Platform.OS === "android") {
                     var target = e.nativeEvent;
                     var y = target.contentOffset.y;
@@ -205,25 +230,32 @@ var ScrollComponent = /** @class */ (function (_super) {
                 }
             } }),
             React.createElement(react_native_1.View, { style: { flexDirection: this.props.isHorizontal ? "row" : "column" } },
-                this.props.onRefresh ?
-                    this.renderIndicatorModule() :
-                    null,
-                React.createElement(react_native_1.View, { style: {
-                        // tslint:disable-next-line:max-line-length
-                        height: react_native_1.Platform.OS === "ios" ? this.props.contentHeight : (react_native_1.Dimensions.get("window").height - this.props.contentHeight < 0 ? this.props.contentHeight : react_native_1.Dimensions.get("window").height),
-                        width: this.props.contentWidth,
-                    } }, renderContentContainer(contentContainerProps, this.props.children)),
+                this.props.onRefresh ? this.renderIndicatorModule() : null,
+                this.props.ListEmptyComponent && this.props.dataProvider.getSize() === 0 ?
+                    React.createElement(react_native_1.View, { style: { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } }, this.renderListEmptyComponent()) :
+                    React.createElement(react_native_1.View, { style: {
+                            // tslint:disable-next-line:max-line-length
+                            height: react_native_1.Platform.OS === "ios" ? this.props.contentHeight : (SCREEN_HEIGHT - this.props.contentHeight < 0 ? this.props.contentHeight : SCREEN_HEIGHT),
+                            width: this.props.contentWidth,
+                        } }, renderContentContainer(contentContainerProps, this.props.children)),
                 this.props.renderFooter ? this.props.renderFooter() : null,
                 this.props.useLoadMore && this.props.onEndReached ? this.renderIndicatorContentBottom() : null)));
     };
+    ScrollComponent.prototype.renderListEmptyComponent = function () {
+        var ListEmptyComponent = this.props.ListEmptyComponent;
+        var element = React.isValidElement(ListEmptyComponent) ? (ListEmptyComponent) : (
+        // @ts-ignore
+        React.createElement(ListEmptyComponent, null));
+        return element;
+    };
     // 手指未离开
-    ScrollComponent.prototype.onScrollBeginDrag = function () {
+    ScrollComponent.prototype.onScrollBeginDrag = function (e) {
         this.setState({
             beginScroll: true,
         });
         this.dragState = true;
         if (this.props.onScrollBeginDrag) {
-            this.props.onScrollBeginDrag();
+            this.props.onScrollBeginDrag(e);
         }
     };
     // 手指离开
@@ -237,7 +269,7 @@ var ScrollComponent = /** @class */ (function (_super) {
             }
             if (this.state.prState) {
                 // 回到待收起状态
-                this._scrollViewRef.scrollTo({ x: 0, y: -70, animated: true });
+                this._scrollViewRef.scrollTo({ x: 0, y: -60, animated: true });
                 this.setState({
                     prTitle: this.props.refreshLoadingText,
                     prLoading: true,
@@ -246,7 +278,7 @@ var ScrollComponent = /** @class */ (function (_super) {
                 });
                 // 触发外部的下拉刷新
                 if (this.props.onRefresh) {
-                    this.props.onRefresh(e);
+                    this.props.onRefresh();
                 }
             }
         }
@@ -258,8 +290,9 @@ var ScrollComponent = /** @class */ (function (_super) {
         var type = this.props.refreshType;
         var jsx = [this.renderNormalContent()];
         return (React.createElement(react_native_1.View, { style: react_native_1.Platform.OS === "ios" ? styles.pullRefresh : {
-                width: react_native_1.Dimensions.get("window").width,
+                width: SCREEN_WIDTH,
                 height: this.loadMoreHeight,
+                justifyContent: "center",
             } }, jsx.map(function (item, index) {
             return React.createElement(react_native_1.View, { key: index }, item);
         })));
@@ -382,7 +415,7 @@ var ScrollComponent = /** @class */ (function (_super) {
             prTimeDisplay: dateFormat(now, "yyyy-MM-dd hh:mm"),
         });
         // 存一下刷新时间
-        react_native_1.AsyncStorage.setItem(this.prStorageKey, now.toString()).then();
+        async_storage_1.default.setItem(this.prStorageKey, now.toString()).then();
         if (this._scrollViewRef) {
             if (react_native_1.Platform.OS === "ios") {
                 this._scrollViewRef.scrollTo({ x: 0, y: 0, animated: true });
@@ -399,6 +432,7 @@ var ScrollComponent = /** @class */ (function (_super) {
             prState: 1,
         });
         react_native_1.Animated.timing(this.state.prArrowDeg, {
+            useNativeDriver: true,
             toValue: 1,
             duration: 100,
             easing: react_native_1.Easing.inOut(react_native_1.Easing.quad),
@@ -411,6 +445,7 @@ var ScrollComponent = /** @class */ (function (_super) {
             prState: 0,
         });
         react_native_1.Animated.timing(this.state.prArrowDeg, {
+            useNativeDriver: true,
             toValue: 0,
             duration: 100,
             easing: react_native_1.Easing.inOut(react_native_1.Easing.quad),
@@ -429,6 +464,8 @@ var ScrollComponent = /** @class */ (function (_super) {
     return ScrollComponent;
 }(BaseScrollComponent_1.default));
 exports.default = ScrollComponent;
+var SCREEN_WIDTH = react_native_1.Dimensions.get("window").width;
+var SCREEN_HEIGHT = react_native_1.Dimensions.get("window").height;
 var dateFormat = function (dateTime, fmt) {
     var date = new Date(dateTime);
     var tmp = fmt || "yyyy-MM-dd";
@@ -455,13 +492,13 @@ var dateFormat = function (dateTime, fmt) {
 var styles = react_native_1.StyleSheet.create({
     pullRefresh: {
         position: "absolute",
-        top: -69,
+        top: -60,
         left: 0,
         backfaceVisibility: "hidden",
         right: 0,
-        height: 70,
+        height: 60,
         alignItems: "center",
-        justifyContent: "flex-end",
+        justifyContent: "center",
     },
     loadMore: {
         height: 35,
