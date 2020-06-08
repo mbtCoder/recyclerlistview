@@ -33,6 +33,7 @@ import { ComponentClass } from "react";
 export interface OnRecreateParams {
     lastOffset?: number;
 }
+export declare type RecyclerListViewRef = RecyclerListView<RecyclerListViewProps, RecyclerListViewState>;
 export interface RecyclerListViewProps {
     layoutProvider: BaseLayoutProvider;
     dataProvider: BaseDataProvider;

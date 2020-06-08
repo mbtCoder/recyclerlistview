@@ -78,6 +78,8 @@ export interface OnRecreateParams {
     lastOffset?: number;
 }
 
+export type RecyclerListViewRef = RecyclerListView<RecyclerListViewProps, RecyclerListViewState>;
+
 export interface RecyclerListViewProps {
     layoutProvider: BaseLayoutProvider;
     dataProvider: BaseDataProvider;

@@ -2,7 +2,7 @@ import ContextProvider from "./core/dependencies/ContextProvider";
 import DataProvider, { BaseDataProvider } from "./core/dependencies/DataProvider";
 import { BaseLayoutProvider, Dimension, LayoutProvider } from "./core/dependencies/LayoutProvider";
 import { GridLayoutProvider } from "./core/dependencies/GridLayoutProvider";
-import RecyclerListView, { OnRecreateParams } from "./core/RecyclerListView";
+import RecyclerListView, { OnRecreateParams, RecyclerListViewRef } from "./core/RecyclerListView";
 import BaseScrollView from "./core/scrollcomponent/BaseScrollView";
 import { BaseItemAnimator } from "./core/ItemAnimator";
 import { AutoScroll } from "./utils/AutoScroll";
@@ -33,4 +33,5 @@ export {
     DebugHandlers,
     BaseDataProvider,
     ComponentCompat,
+    RecyclerListViewRef,
 };
