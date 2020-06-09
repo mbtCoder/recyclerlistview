@@ -29,6 +29,7 @@ var react_native_1 = require("react-native");
 var BaseScrollComponent_1 = require("../../../core/scrollcomponent/BaseScrollComponent");
 var TSCast_1 = require("../../../utils/TSCast");
 var async_storage_1 = require("@react-native-community/async-storage");
+var ItemAnimator_1 = require("../../../core/ItemAnimator");
 /***
  * The responsibility of a scroll component is to report its size, scroll events and provide a way to scroll to a given offset.
  * RecyclerListView works on top of this interface and doesn't care about the implementation. To support web we only had to provide
@@ -48,36 +49,38 @@ var ScrollComponent = /** @class */ (function (_super) {
                 _this._offset = _this.props.isHorizontal ? contentOffset.x : contentOffset.y;
                 _this.props.onScroll(contentOffset.x, contentOffset.y, event);
             }
-            // @ts-ignore
-            var target = event.nativeEvent;
-            var y = target.contentOffset.y;
-            if (_this.dragState) {
-                if (react_native_1.Platform.OS === "ios") {
-                    if (y <= -60) {
-                        _this.upState();
+            // 开启下拉刷新时执行
+            if (_this.props.onRefresh) {
+                // @ts-ignore
+                var target = event.nativeEvent;
+                var y = target.contentOffset.y;
+                if (_this.dragState) {
+                    if (react_native_1.Platform.OS === "ios") {
+                        if (y <= -60) {
+                            _this.upState();
+                        }
+                        else {
+                            _this.downState();
+                        }
                     }
-                    else {
-                        _this.downState();
+                    else if (react_native_1.Platform.OS === "android") {
+                        if (y <= 10) {
+                            _this.upState();
+                        }
+                        else {
+                            _this.downState();
+                        }
                     }
                 }
-                else if (react_native_1.Platform.OS === "android") {
-                    if (y <= 10) {
-                        _this.upState();
+                else {
+                    if (y === 0 && react_native_1.Platform.OS === "android") {
+                        _this.setState({
+                            prTitle: _this.props.refreshLoadingText,
+                            prLoading: true,
+                            prArrowDeg: new react_native_1.Animated.Value(0),
+                        });
+                        _this.onRefreshEnd();
                     }
-                    else {
-                        _this.downState();
-                    }
-                }
-            }
-            else {
-                if (y === 0 &&
-                    react_native_1.Platform.OS === "android") {
-                    _this.setState({
-                        prTitle: _this.props.refreshLoadingText,
-                        prLoading: true,
-                        prArrowDeg: new react_native_1.Animated.Value(0),
-                    });
-                    _this.onRefreshEnd();
                 }
             }
         };
@@ -150,46 +153,33 @@ var ScrollComponent = /** @class */ (function (_super) {
     // }
     ScrollComponent.prototype.componentDidMount = function () {
         var _this = this;
-        // 首次加载刷新
-        if (this.props.onRefresh && this.props.useMountRefresh) {
-            this.setState({
-                prTitle: this.props.refreshLoadingText,
-                prLoading: true,
-                prArrowDeg: new react_native_1.Animated.Value(0),
-            });
-            if (react_native_1.Platform.OS === "ios" && this._scrollViewRef) {
-                this._scrollViewRef.scrollTo({ x: 0, y: -60, animated: true });
+        // 开启下拉刷新执行
+        if (this.props.onRefresh) {
+            // 使用首次加载刷新
+            if (this.props.useMountRefresh) {
+                this.setState({
+                    prTitle: this.props.refreshLoadingText,
+                    prLoading: true,
+                    prArrowDeg: new react_native_1.Animated.Value(0),
+                });
+                if (react_native_1.Platform.OS === "ios" && this._scrollViewRef) {
+                    this._scrollViewRef.scrollTo({ x: 0, y: -60, animated: true });
+                }
+                this.props.onRefresh();
             }
-            this.props.onRefresh();
+            else if (react_native_1.Platform.OS === "android") {
+                // 不需要首次刷新
+                // 安卓首次挂载 会显示刷新界面需要ScrollTo到默认位置
+                this.timer = setTimeout(function () {
+                    if (_this._scrollViewRef) {
+                        _this._scrollViewRef.scrollTo({ x: 0, y: _this.loadMoreHeight, animated: true });
+                    }
+                    if (_this.timer) {
+                        clearTimeout(_this.timer);
+                    }
+                }, 1);
+            }
         }
-        else if (react_native_1.Platform.OS === "android") {
-            // 不需要首次刷新
-            // 安卓首次挂载 会显示刷新界面需要ScrollTo到默认位置
-            this.timer = setTimeout(function () {
-                if (_this._scrollViewRef) {
-                    _this._scrollViewRef.scrollTo({ x: 0, y: _this.loadMoreHeight, animated: true });
-                }
-                if (_this.timer) {
-                    clearTimeout(_this.timer);
-                }
-            }, 1);
-        }
-        // if (Platform.OS === "android" &&
-        //   this.props.onRefresh) {
-        //   this.setState({
-        //     prTitle: this.props.refreshLoadingText!,
-        //     prLoading: true,
-        //     prArrowDeg: new Animated.Value(0),
-        //   });
-        //   this.timer = setTimeout(() => {
-        //     if (this._scrollViewRef) {
-        //       this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
-        //     }
-        //     if (this.timer) {
-        //       clearTimeout(this.timer);
-        //     }
-        //   }, 1000);
-        // }
     };
     ScrollComponent.prototype.render = function () {
         var _this = this;
@@ -260,7 +250,7 @@ var ScrollComponent = /** @class */ (function (_super) {
     };
     // 手指离开
     ScrollComponent.prototype.onScrollEndDrag = function (e) {
-        if (this._scrollViewRef) {
+        if (this._scrollViewRef && this.props.onRefresh) {
             var target = e.nativeEvent;
             var y = target.contentOffset.y;
             this.dragState = false;
@@ -277,9 +267,7 @@ var ScrollComponent = /** @class */ (function (_super) {
                     prState: 0,
                 });
                 // 触发外部的下拉刷新
-                if (this.props.onRefresh) {
-                    this.props.onRefresh();
-                }
+                this.props.onRefresh();
             }
         }
     };
@@ -377,11 +365,14 @@ var ScrollComponent = /** @class */ (function (_super) {
         var jsx = [];
         var indicatorStyle = {
             position: "absolute",
-            left: -40,
+            left: -50,
             top: -1,
             width: 16,
             height: 16,
         };
+        if (this.state.loadTitle === this.props.loadMoreLoadingText) {
+            jsx.push(React.createElement(react_native_1.ActivityIndicator, { key: "bottom_activityIndicator", style: indicatorStyle, animating: true, color: "#488eff" }));
+        }
         jsx.push(React.createElement(react_native_1.Text, { key: 2, style: { color: "#979aa0" } }, this.state.loadTitle));
         return jsx;
     };
@@ -432,7 +423,7 @@ var ScrollComponent = /** @class */ (function (_super) {
             prState: 1,
         });
         react_native_1.Animated.timing(this.state.prArrowDeg, {
-            useNativeDriver: true,
+            useNativeDriver: ItemAnimator_1.BaseItemAnimator.USE_NATIVE_DRIVER,
             toValue: 1,
             duration: 100,
             easing: react_native_1.Easing.inOut(react_native_1.Easing.quad),
@@ -445,7 +436,7 @@ var ScrollComponent = /** @class */ (function (_super) {
             prState: 0,
         });
         react_native_1.Animated.timing(this.state.prArrowDeg, {
-            useNativeDriver: true,
+            useNativeDriver: ItemAnimator_1.BaseItemAnimator.USE_NATIVE_DRIVER,
             toValue: 0,
             duration: 100,
             easing: react_native_1.Easing.inOut(react_native_1.Easing.quad),
@@ -502,6 +493,7 @@ var styles = react_native_1.StyleSheet.create({
     },
     loadMore: {
         height: 35,
+        marginBottom: 10,
         alignItems: "center",
         justifyContent: "center",
     },

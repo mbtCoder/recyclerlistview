@@ -144,11 +144,11 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
          * 下拉刷新&上拉加载
          */
         refreshReleaseText: "释放立即刷新",
-        refreshLoadingText: "正在刷新数据中..",
+        refreshLoadingText: "正在刷新数据..",
         refreshNormalText: "下拉可以刷新",
-        loadMoreNormalText: "上拉加载更多数据",
-        loadMoreNoDataText: "已经加载全部数据",
-        loadMoreLoadingText: "正在加载更多数据..",
+        loadMoreNormalText: "上拉加载更多",
+        loadMoreNoDataText: "已全部加载",
+        loadMoreLoadingText: "加载更多..",
         indicatorArrowImg: {
             style: {},
             url: "",

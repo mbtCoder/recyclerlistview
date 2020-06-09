@@ -10,6 +10,7 @@ import {
 import BaseScrollComponent, { ScrollComponentProps } from "../../../core/scrollcomponent/BaseScrollComponent";
 import TSCast from "../../../utils/TSCast";
 import AsyncStorage from "@react-native-community/async-storage";
+import { BaseItemAnimator } from "../../../core/ItemAnimator";
 
 /***
  * The responsibility of a scroll component is to report its size, scroll events and provide a way to scroll to a given offset.
@@ -104,46 +105,33 @@ export default class ScrollComponent extends BaseScrollComponent {
     // }
 
     public componentDidMount(): void {
-        // 首次加载刷新
-        if (this.props.onRefresh && this.props.useMountRefresh) {
-            this.setState({
-                prTitle: this.props.refreshLoadingText!,
-                prLoading: true,
-                prArrowDeg: new Animated.Value(0),
-            });
+        // 开启下拉刷新执行
+        if (this.props.onRefresh) {
+            // 使用首次加载刷新
+            if (this.props.useMountRefresh) {
+                this.setState({
+                    prTitle: this.props.refreshLoadingText!,
+                    prLoading: true,
+                    prArrowDeg: new Animated.Value(0),
+                });
 
-            if (Platform.OS === "ios" && this._scrollViewRef) {
-                this._scrollViewRef.scrollTo({ x: 0, y: -60, animated: true });
+                if (Platform.OS === "ios" && this._scrollViewRef) {
+                    this._scrollViewRef.scrollTo({ x: 0, y: -60, animated: true });
+                }
+                this.props.onRefresh();
+            } else if (Platform.OS === "android") {
+                // 不需要首次刷新
+                // 安卓首次挂载 会显示刷新界面需要ScrollTo到默认位置
+                this.timer = setTimeout(() => {
+                    if (this._scrollViewRef) {
+                        this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
+                    }
+                    if (this.timer) {
+                        clearTimeout(this.timer);
+                    }
+                }, 1);
             }
-            this.props.onRefresh();
-        } else if (Platform.OS === "android") {
-            // 不需要首次刷新
-            // 安卓首次挂载 会显示刷新界面需要ScrollTo到默认位置
-            this.timer = setTimeout(() => {
-                if (this._scrollViewRef) {
-                    this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
-                }
-                if (this.timer) {
-                    clearTimeout(this.timer);
-                }
-            }, 1);
         }
-        // if (Platform.OS === "android" &&
-        //   this.props.onRefresh) {
-        //   this.setState({
-        //     prTitle: this.props.refreshLoadingText!,
-        //     prLoading: true,
-        //     prArrowDeg: new Animated.Value(0),
-        //   });
-        //   this.timer = setTimeout(() => {
-        //     if (this._scrollViewRef) {
-        //       this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
-        //     }
-        //     if (this.timer) {
-        //       clearTimeout(this.timer);
-        //     }
-        //   }, 1000);
-        // }
     }
 
     public render(): JSX.Element {
@@ -245,7 +233,7 @@ export default class ScrollComponent extends BaseScrollComponent {
 
     // 手指离开
     public onScrollEndDrag(e: NativeSyntheticEvent<NativeScrollEvent>): void {
-        if (this._scrollViewRef) {
+        if (this._scrollViewRef && this.props.onRefresh) {
             const target = e.nativeEvent;
             const y = target.contentOffset.y;
 
@@ -266,9 +254,7 @@ export default class ScrollComponent extends BaseScrollComponent {
                 });
 
                 // 触发外部的下拉刷新
-                if (this.props.onRefresh) {
-                    this.props.onRefresh();
-                }
+                this.props.onRefresh();
             }
         }
     }
@@ -385,13 +371,17 @@ export default class ScrollComponent extends BaseScrollComponent {
 
     public renderBottomContent(): JSX.Element[] {
         const jsx = [];
-        const indicatorStyle = {
+        const indicatorStyle: ViewStyle = {
             position: "absolute",
-            left: -40,
+            left: -50,
             top: -1,
             width: 16,
             height: 16,
         };
+
+        if (this.state.loadTitle === this.props.loadMoreLoadingText) {
+            jsx.push(<ActivityIndicator key={"bottom_activityIndicator"} style={indicatorStyle} animating color={"#488eff"}/>);
+        }
 
         jsx.push(<Text key={2} style={{ color: "#979aa0" }}>{this.state.loadTitle}</Text>);
 
@@ -450,7 +440,7 @@ export default class ScrollComponent extends BaseScrollComponent {
         });
 
         Animated.timing(this.state.prArrowDeg, {
-            useNativeDriver: true,
+            useNativeDriver: BaseItemAnimator.USE_NATIVE_DRIVER,
             toValue: 1,
             duration: 100,
             easing: Easing.inOut(Easing.quad),
@@ -464,7 +454,7 @@ export default class ScrollComponent extends BaseScrollComponent {
             prState: 0,
         });
         Animated.timing(this.state.prArrowDeg, {
-            useNativeDriver: true,
+            useNativeDriver: BaseItemAnimator.USE_NATIVE_DRIVER,
             toValue: 0,
             duration: 100,
             easing: Easing.inOut(Easing.quad),
@@ -490,36 +480,37 @@ export default class ScrollComponent extends BaseScrollComponent {
             this.props.onScroll(contentOffset.x, contentOffset.y, event);
         }
 
-        // @ts-ignore
-        const target = event.nativeEvent;
-        const y = target.contentOffset.y;
+        // 开启下拉刷新时执行
+        if (this.props.onRefresh) {
+            // @ts-ignore
+            const target = event.nativeEvent;
+            const y = target.contentOffset.y;
 
-        if (this.dragState) {
-            if (Platform.OS === "ios") {
-                if (y <= -60) {
-                    this.upState();
+            if (this.dragState) {
+                if (Platform.OS === "ios") {
+                    if (y <= -60) {
+                        this.upState();
 
-                } else {
-                    this.downState();
+                    } else {
+                        this.downState();
+                    }
+                } else if (Platform.OS === "android") {
+                    if (y <= 10) {
+                        this.upState();
+
+                    } else {
+                        this.downState();
+                    }
                 }
-            } else if (Platform.OS === "android") {
-                if (y <= 10) {
-                    this.upState();
-
-                } else {
-                    this.downState();
+            } else {
+                if (y === 0 && Platform.OS === "android") {
+                    this.setState({
+                        prTitle: this.props.refreshLoadingText!,
+                        prLoading: true,
+                        prArrowDeg: new Animated.Value(0),
+                    });
+                    this.onRefreshEnd();
                 }
-            }
-        } else {
-            if (y === 0 &&
-                Platform.OS === "android") {
-                this.setState({
-                    prTitle: this.props.refreshLoadingText!,
-                    prLoading: true,
-                    prArrowDeg: new Animated.Value(0),
-
-                });
-                this.onRefreshEnd();
             }
         }
     };
@@ -581,6 +572,7 @@ const styles = StyleSheet.create({
     },
     loadMore: {
         height: 35,
+        marginBottom: 10,
         alignItems: "center",
         justifyContent: "center",
     },
