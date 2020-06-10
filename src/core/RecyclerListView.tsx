@@ -40,8 +40,7 @@ import { ComponentCompat } from "../utils/ComponentCompat";
 //#if [REACT-NATIVE]
 import ScrollComponent from "../platform/reactnative/scrollcomponent/ScrollComponent";
 import ViewRenderer from "../platform/reactnative/viewrenderer/ViewRenderer";
-import { Platform, ScrollViewProps, View, StyleSheet, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
-import { ComponentClass } from "react";
+import { Platform, ScrollViewProps, StyleProp, ViewStyle } from "react-native";
 
 const IS_WEB = !Platform || Platform.OS === "web";
 //#endif
@@ -106,12 +105,12 @@ export interface RecyclerListViewProps {
     extendedState?: object;
     itemAnimator?: ItemAnimator;
     optimizeForInsertDeleteAnimations?: boolean;
-    style?: object | number;
+    style?: StyleProp<ViewStyle>; // 源库类型补充
     debugHandlers?: DebugHandlers;
     renderContentContainer?: (props?: object, children?: React.ReactNode) => React.ReactNode | null;
     //For all props that need to be proxied to inner/external scrollview. Put them in an object and they'll be spread
     //and passed down. For better typescript support.
-    scrollViewProps: ScrollViewProps; // 库源类型补充
+    scrollViewProps?: ScrollViewProps; // 库源类型补充
     applyWindowCorrection?: (offsetX: number, offsetY: number, windowCorrection: WindowCorrection) => void;
     /**
      * 下拉刷新&上拉加载
@@ -123,7 +122,7 @@ export interface RecyclerListViewProps {
     onNoDataToLoad?: () => void;
     onRefresh?: () => void;
     useLoadMore?: boolean;
-    ListEmptyComponent?: ComponentClass;
+    useMountRefresh?: boolean;
 }
 
 export interface RecyclerListViewState {
@@ -143,12 +142,12 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         /**
          * 下拉刷新&上拉加载
          */
-        refreshReleaseText: "释放立即刷新",
-        refreshLoadingText: "正在刷新数据..",
-        refreshNormalText: "下拉可以刷新",
-        loadMoreNormalText: "上拉加载更多",
+        refreshReleaseText: "释放更新",
+        refreshLoadingText: "加载中...",
+        refreshNormalText: "下拉刷新",
+        loadMoreNormalText: "上拉加载",
         loadMoreNoDataText: "已全部加载",
-        loadMoreLoadingText: "加载更多..",
+        loadMoreLoadingText: "加载更多...",
         indicatorArrowImg: {
             style: {},
             url: "",
@@ -236,7 +235,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         this._processOnEndReached();
         this._checkAndChangeLayouts(this.props);
         if (this.props.dataProvider.getSize() === 0) {
-            // console.warn(Messages.WARN_NO_DATA); //tslint:disable-line
+            console.warn(Messages.WARN_NO_DATA); //tslint:disable-line
         }
     }
 
@@ -591,8 +590,15 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         if (props.onVisibleIndicesChanged) {
             this._virtualRenderer.attachVisibleItemsListener(props.onVisibleIndicesChanged!);
         }
+        // 安卓首次挂载 会显示刷新界面需要偏移60高度到默认位置
+        let refreshOffset = 0;
+        if (props.initialOffset !== 0) {
+            refreshOffset = props.initialOffset!;
+        } else if (props.onRefresh && !props.useMountRefresh && Platform.OS === "android") {
+            refreshOffset = 60;
+        }
         this._params = {
-            initialOffset: this._initialOffset ? this._initialOffset : props.initialOffset,
+            initialOffset: this._initialOffset ? this._initialOffset : refreshOffset,
             initialRenderIndex: props.initialRenderIndex,
             isHorizontal: props.isHorizontal,
             itemCount: props.dataProvider.getSize(),

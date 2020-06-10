@@ -217,7 +217,7 @@ var RecyclerListView = /** @class */ (function (_super) {
         this._processOnEndReached();
         this._checkAndChangeLayouts(this.props);
         if (this.props.dataProvider.getSize() === 0) {
-            // console.warn(Messages.WARN_NO_DATA); //tslint:disable-line
+            console.warn(Messages_1.Messages.WARN_NO_DATA); //tslint:disable-line
         }
     };
     RecyclerListView.prototype.componentDidMount = function () {
@@ -485,8 +485,16 @@ var RecyclerListView = /** @class */ (function (_super) {
         if (props.onVisibleIndicesChanged) {
             this._virtualRenderer.attachVisibleItemsListener(props.onVisibleIndicesChanged);
         }
+        // 安卓首次挂载 会显示刷新界面需要偏移60高度到默认位置
+        var refreshOffset = 0;
+        if (props.initialOffset !== 0) {
+            refreshOffset = props.initialOffset;
+        }
+        else if (props.onRefresh && !props.useMountRefresh && react_native_1.Platform.OS === "android") {
+            refreshOffset = 60;
+        }
         this._params = {
-            initialOffset: this._initialOffset ? this._initialOffset : props.initialOffset,
+            initialOffset: this._initialOffset ? this._initialOffset : refreshOffset,
             initialRenderIndex: props.initialRenderIndex,
             isHorizontal: props.isHorizontal,
             itemCount: props.dataProvider.getSize(),
@@ -591,12 +599,12 @@ var RecyclerListView = /** @class */ (function (_super) {
         /**
          * 下拉刷新&上拉加载
          */
-        refreshReleaseText: "释放立即刷新",
-        refreshLoadingText: "正在刷新数据..",
-        refreshNormalText: "下拉可以刷新",
-        loadMoreNormalText: "上拉加载更多",
+        refreshReleaseText: "释放更新",
+        refreshLoadingText: "加载中...",
+        refreshNormalText: "下拉刷新",
+        loadMoreNormalText: "上拉加载",
         loadMoreNoDataText: "已全部加载",
-        loadMoreLoadingText: "加载更多..",
+        loadMoreLoadingText: "加载更多...",
         indicatorArrowImg: {
             style: {},
             url: "",

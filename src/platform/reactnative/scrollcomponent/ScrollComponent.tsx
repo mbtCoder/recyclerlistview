@@ -105,32 +105,18 @@ export default class ScrollComponent extends BaseScrollComponent {
     // }
 
     public componentDidMount(): void {
-        // 开启下拉刷新执行
-        if (this.props.onRefresh) {
-            // 使用首次加载刷新
-            if (this.props.useMountRefresh) {
-                this.setState({
-                    prTitle: this.props.refreshLoadingText!,
-                    prLoading: true,
-                    prArrowDeg: new Animated.Value(0),
-                });
+        //  开启下拉刷新执行 使用首次加载刷新
+        if (this.props.onRefresh && this.props.useMountRefresh) {
+            this.setState({
+                prTitle: this.props.refreshLoadingText!,
+                prLoading: true,
+                prArrowDeg: new Animated.Value(0),
+            });
 
-                if (Platform.OS === "ios" && this._scrollViewRef) {
-                    this._scrollViewRef.scrollTo({ x: 0, y: -60, animated: true });
-                }
-                this.props.onRefresh();
-            } else if (Platform.OS === "android") {
-                // 不需要首次刷新
-                // 安卓首次挂载 会显示刷新界面需要ScrollTo到默认位置
-                this.timer = setTimeout(() => {
-                    if (this._scrollViewRef) {
-                        this._scrollViewRef.scrollTo({ x: 0, y: this.loadMoreHeight, animated: true });
-                    }
-                    if (this.timer) {
-                        clearTimeout(this.timer);
-                    }
-                }, 1);
+            if (Platform.OS === "ios" && this._scrollViewRef) {
+                this._scrollViewRef.scrollTo({ x: 0, y: -60, animated: true });
             }
+            this.props.onRefresh();
         }
     }
 
@@ -186,17 +172,13 @@ export default class ScrollComponent extends BaseScrollComponent {
                 <View style={{ flexDirection: this.props.isHorizontal ? "row" : "column" }}>
                     {this.props.onRefresh ? this.renderIndicatorModule() : null}
 
-                    {this.props.ListEmptyComponent && this.props.dataProvider.getSize() === 0 ?
-                        <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}>
-                            {this.renderListEmptyComponent()}
-                        </View> :
-                        <View style={{
-                            // tslint:disable-next-line:max-line-length
-                            height: Platform.OS === "ios" ? this.props.contentHeight : (SCREEN_HEIGHT - this.props.contentHeight < 0 ? this.props.contentHeight : SCREEN_HEIGHT),
-                            width: this.props.contentWidth,
-                        }}>
-                            {renderContentContainer(contentContainerProps, this.props.children)}
-                        </View>}
+                    <View style={{
+                        // tslint:disable-next-line:max-line-length
+                        height: Platform.OS === "ios" ? this.props.contentHeight : (SCREEN_HEIGHT - this.props.contentHeight < 0 ? this.props.contentHeight : SCREEN_HEIGHT),
+                        width: this.props.contentWidth,
+                    }}>
+                        {renderContentContainer(contentContainerProps, this.props.children)}
+                    </View>
 
                     {this.props.renderFooter ? this.props.renderFooter() : null}
 
@@ -205,20 +187,6 @@ export default class ScrollComponent extends BaseScrollComponent {
             </Scroller>
         );
     }
-
-    public renderListEmptyComponent(): JSX.Element {
-        const { ListEmptyComponent } = this.props;
-        const element = React.isValidElement(
-            ListEmptyComponent,
-        ) ? (
-            ListEmptyComponent
-        ) : (
-            // @ts-ignore
-            <ListEmptyComponent/>
-        );
-        return element;
-    }
-
     // 手指未离开
     public onScrollBeginDrag(e: NativeSyntheticEvent<NativeScrollEvent>): void {
         this.setState({

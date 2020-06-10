@@ -3,7 +3,6 @@ import { Dimension } from "../dependencies/LayoutProvider";
 import BaseScrollView, { ScrollEvent, ScrollViewDefaultProps } from "./BaseScrollView";
 import { NativeScrollEvent, NativeSyntheticEvent, ScrollViewProps, StyleProp, ViewStyle } from "react-native";
 import { BaseDataProvider } from "../dependencies/DataProvider";
-import { ComponentClass } from "react";
 
 export interface ScrollComponentProps extends CustomRefreshProps {
     onSizeChanged: (dimensions: Dimension) => void;
@@ -25,7 +24,7 @@ export interface ScrollComponentProps extends CustomRefreshProps {
  *  下拉刷新&上拉加载 类型补充
  */
 interface CustomRefreshProps {
-    scrollViewProps: ScrollViewProps; // 库源类型补充
+    scrollViewProps?: ScrollViewProps; // 库源类型补充
     onEndReached?: () => void; // 库源类型补充 源库实际调用就是无参函数
     refreshNormalText?: string;
     refreshLoadingText?: string;
@@ -48,8 +47,7 @@ interface CustomRefreshProps {
         style: ViewStyle;
         url: string;
     };
-   dataProvider: BaseDataProvider;
-   ListEmptyComponent?: ComponentClass;
+    dataProvider: BaseDataProvider;
 }
 
 /**
@@ -70,8 +68,11 @@ export default abstract class BaseScrollComponent extends React.Component<Scroll
      *  下拉刷新&上拉加载
      */
     public abstract onLoadingMore(): void;
+
     public abstract onRefreshEnd(): void;
+
     public abstract onLoadNormal(): void;
+
     public abstract onNoDataToLoad(): void;
 
     public abstract scrollTo(x: number, y: number, animate: boolean): void;

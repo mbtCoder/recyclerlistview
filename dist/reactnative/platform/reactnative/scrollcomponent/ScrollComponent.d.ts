@@ -33,7 +33,6 @@ export default class ScrollComponent extends BaseScrollComponent {
     scrollTo(x: number, y: number, isAnimated: boolean): void;
     componentDidMount(): void;
     render(): JSX.Element;
-    renderListEmptyComponent(): JSX.Element;
     onScrollBeginDrag(e: NativeSyntheticEvent<NativeScrollEvent>): void;
     onScrollEndDrag(e: NativeSyntheticEvent<NativeScrollEvent>): void;
     /**

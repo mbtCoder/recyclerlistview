@@ -9,8 +9,7 @@ import VirtualRenderer, { RenderStack } from "./VirtualRenderer";
 import ItemAnimator from "./ItemAnimator";
 import { DebugHandlers } from "..";
 import { ComponentCompat } from "../utils/ComponentCompat";
-import { ScrollViewProps } from "react-native";
-import { ComponentClass } from "react";
+import { ScrollViewProps, StyleProp, ViewStyle } from "react-native";
 /***
  * To use on web, start importing from recyclerlistview/web. To make it even easier specify an alias in you builder of choice.
  */
@@ -62,10 +61,10 @@ export interface RecyclerListViewProps {
     extendedState?: object;
     itemAnimator?: ItemAnimator;
     optimizeForInsertDeleteAnimations?: boolean;
-    style?: object | number;
+    style?: StyleProp<ViewStyle>;
     debugHandlers?: DebugHandlers;
     renderContentContainer?: (props?: object, children?: React.ReactNode) => React.ReactNode | null;
-    scrollViewProps: ScrollViewProps;
+    scrollViewProps?: ScrollViewProps;
     applyWindowCorrection?: (offsetX: number, offsetY: number, windowCorrection: WindowCorrection) => void;
     /**
      * 下拉刷新&上拉加载
@@ -77,7 +76,7 @@ export interface RecyclerListViewProps {
     onNoDataToLoad?: () => void;
     onRefresh?: () => void;
     useLoadMore?: boolean;
-    ListEmptyComponent?: ComponentClass;
+    useMountRefresh?: boolean;
 }
 export interface RecyclerListViewState {
     renderStack: RenderStack;

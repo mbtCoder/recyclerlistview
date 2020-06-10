@@ -3,7 +3,6 @@ import { Dimension } from "../dependencies/LayoutProvider";
 import BaseScrollView, { ScrollEvent, ScrollViewDefaultProps } from "./BaseScrollView";
 import { NativeScrollEvent, NativeSyntheticEvent, ScrollViewProps, StyleProp, ViewStyle } from "react-native";
 import { BaseDataProvider } from "../dependencies/DataProvider";
-import { ComponentClass } from "react";
 export interface ScrollComponentProps extends CustomRefreshProps {
     onSizeChanged: (dimensions: Dimension) => void;
     onScroll: (offsetX: number, offsetY: number, rawEvent: ScrollEvent) => void;
@@ -25,7 +24,7 @@ export interface ScrollComponentProps extends CustomRefreshProps {
  *  下拉刷新&上拉加载 类型补充
  */
 interface CustomRefreshProps {
-    scrollViewProps: ScrollViewProps;
+    scrollViewProps?: ScrollViewProps;
     onEndReached?: () => void;
     refreshNormalText?: string;
     refreshLoadingText?: string;
@@ -49,7 +48,6 @@ interface CustomRefreshProps {
         url: string;
     };
     dataProvider: BaseDataProvider;
-    ListEmptyComponent?: ComponentClass;
 }
 /**
  *  下拉刷新&上拉加载 类型补充

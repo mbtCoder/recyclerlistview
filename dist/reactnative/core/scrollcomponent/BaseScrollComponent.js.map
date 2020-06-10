@@ -1,1 +1,1 @@
-{"version":3,"file":"BaseScrollComponent.js","sourceRoot":"","sources":["../../../../src/core/scrollcomponent/BaseScrollComponent.tsx"],"names":[],"mappings":";;;;;;;;;;;;;;;AAAA,6BAA+B;AAmE/B;IAA0D,uCAA2D;IAArH;;IAUA,CAAC;IAAD,0BAAC;AAAD,CAAC,AAVD,CAA0D,KAAK,CAAC,SAAS,GAUxE"}
+{"version":3,"file":"BaseScrollComponent.js","sourceRoot":"","sources":["../../../../src/core/scrollcomponent/BaseScrollComponent.tsx"],"names":[],"mappings":";;;;;;;;;;;;;;;AAAA,6BAA+B;AAiE/B;IAA0D,uCAA2D;IAArH;;IAaA,CAAC;IAAD,0BAAC;AAAD,CAAC,AAbD,CAA0D,KAAK,CAAC,SAAS,GAaxE"}
