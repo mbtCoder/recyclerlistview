@@ -318,13 +318,8 @@ var RecyclerListView = /** @class */ (function (_super) {
      * @function: 上拉加载更多
      */
     RecyclerListView.prototype.onLoadingMore = function () {
-        var _this = this;
         if (this._scrollComponent) {
-            setTimeout(function () {
-                if (_this._scrollComponent) {
-                    _this._scrollComponent.onLoadingMore();
-                }
-            }, 1000);
+            this._scrollComponent.onLoadingMore();
         }
     };
     /**

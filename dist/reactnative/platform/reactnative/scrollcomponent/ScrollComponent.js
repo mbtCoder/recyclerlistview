@@ -327,7 +327,7 @@ var ScrollComponent = /** @class */ (function (_super) {
                 return React.createElement(react_native_1.View, { key: index }, item);
             })),
             React.createElement(react_native_1.Text, { style: styles.prText },
-                "\u4E0A\u6B21\u66F4\u65B0\u65F6\u95F4\uFF1A",
+                "\u4E0A\u6B21\u66F4\u65B0\uFF1A",
                 this.state.prTimeDisplay)));
     };
     ScrollComponent.prototype.renderIndicatorContentBottom = function () {

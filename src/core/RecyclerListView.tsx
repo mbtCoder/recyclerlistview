@@ -373,11 +373,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
      */
     public onLoadingMore(): void {
         if (this._scrollComponent) {
-            setTimeout(() => {
-                if (this._scrollComponent) {
-                    this._scrollComponent.onLoadingMore();
-                }
-            }, 1000);
+            this._scrollComponent.onLoadingMore();
         }
     }
 

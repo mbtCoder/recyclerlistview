@@ -318,7 +318,7 @@ export default class ScrollComponent extends BaseScrollComponent {
                     })}
 
                 </View>
-                <Text style={styles.prText}>上次更新时间：{this.state.prTimeDisplay}</Text>
+                <Text style={styles.prText}>上次更新：{this.state.prTimeDisplay}</Text>
             </View>
         );
 
