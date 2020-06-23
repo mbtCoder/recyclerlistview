@@ -368,7 +368,11 @@ var RecyclerListView = /** @class */ (function (_super) {
     RecyclerListView.prototype._processInitialOffset = function () {
         var _this = this;
         if (this._pendingScrollToOffset) {
-            var offset_1 = this._pendingScrollToOffset;
+            var tempOffset = this._pendingScrollToOffset;
+            var offset_1 = { x: tempOffset.x, y: tempOffset.y };
+            if (react_native_1.Platform.OS === "android" && !this.props.isHorizontal && tempOffset.y === 0) {
+                offset_1.y = 60;
+            }
             this._pendingScrollToOffset = null;
             if (this.props.isHorizontal) {
                 offset_1.y = 0;

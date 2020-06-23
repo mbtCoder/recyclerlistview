@@ -439,7 +439,11 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
 
     private _processInitialOffset(): void {
         if (this._pendingScrollToOffset) {
-            const offset = this._pendingScrollToOffset;
+            const tempOffset = this._pendingScrollToOffset;
+            const offset = { x: tempOffset.x, y: tempOffset.y };
+            if (Platform.OS === "android" && !this.props.isHorizontal && tempOffset.y === 0) {
+                offset.y = 60;
+            }
             this._pendingScrollToOffset = null;
             if (this.props.isHorizontal) {
                 offset.y = 0;
