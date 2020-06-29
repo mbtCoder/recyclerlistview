@@ -33,7 +33,6 @@ export default class ProgressiveListView extends RecyclerListView<ProgressiveLis
         };
         refreshType: string;
         useLoadMore: boolean;
-        useMountRefresh: boolean;
     };
     private renderAheadUdpateCallbackId?;
     componentDidMount(): void;

@@ -42,6 +42,8 @@ export default class ScrollComponent extends BaseScrollComponent {
     }
     public  onNoDataToLoad(): void{
     }
+    public  onRefreshing(): void{
+    }
 
     public render(): JSX.Element {
         const Scroller = this.props.externalScrollView as any; //TSI

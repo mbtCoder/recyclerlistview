@@ -71,12 +71,12 @@ export interface RecyclerListViewProps {
      */
     flag?: string;
     onLoadingMore?: () => void;
+    onRefreshing?: () => void;
     onRefreshEnd?: () => void;
     onLoadNormal?: () => void;
     onNoDataToLoad?: () => void;
     onRefresh?: () => void;
     useLoadMore?: boolean;
-    useMountRefresh?: boolean;
 }
 export interface RecyclerListViewState {
     renderStack: RenderStack;
@@ -110,7 +110,6 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         };
         refreshType: string;
         useLoadMore: boolean;
-        useMountRefresh: boolean;
     };
     static propTypes: {};
     private refreshRequestDebouncer;
@@ -127,6 +126,10 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     private _scrollComponent;
     private _windowCorrection;
     private _defaultItemAnimator;
+    private _refreshStatus;
+    private _endDragPoint;
+    private _beginDragPoint;
+    private _momentumEndPoint;
     constructor(props: P, context?: any);
     componentWillReceivePropsCompat(newProps: RecyclerListViewProps): void;
     componentDidUpdate(): void;
@@ -152,6 +155,11 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     onRefreshEnd: () => void;
     /**
      * @todo: 上拉刷新&下拉加载
+     * @function: 终止x下拉刷新
+     */
+    onRefreshing: () => void;
+    /**
+     * @todo: 上拉刷新&下拉加载
      * @function: 上拉加载更多
      */
     onLoadingMore(): void;
@@ -165,6 +173,9 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
      * @function: 没有数据可加载
      */
     onNoDataToLoad(): void;
+    onScrollBeginDrag(e: any): void;
+    onScrollEndDrag(e: any): void;
+    onMomentumScrollEnd: (e: any) => void;
     renderCompat(): JSX.Element;
     protected getVirtualRenderer(): VirtualRenderer;
     private _processInitialOffset;

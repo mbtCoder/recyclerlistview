@@ -38,7 +38,7 @@ import ItemAnimator, { BaseItemAnimator } from "./ItemAnimator";
 import { DebugHandlers } from "..";
 import { ComponentCompat } from "../utils/ComponentCompat";
 //#if [REACT-NATIVE]
-import ScrollComponent from "../platform/reactnative/scrollcomponent/ScrollComponent";
+import ScrollComponent, { PULL_REFRESH_HEIGHT } from "../platform/reactnative/scrollcomponent/ScrollComponent";
 import ViewRenderer from "../platform/reactnative/viewrenderer/ViewRenderer";
 import { Platform, ScrollViewProps, StyleProp, ViewStyle } from "react-native";
 
@@ -117,12 +117,12 @@ export interface RecyclerListViewProps {
      */
     flag?: string;
     onLoadingMore?: () => void;
+    onRefreshing?: () => void;
     onRefreshEnd?: () => void;
     onLoadNormal?: () => void;
     onNoDataToLoad?: () => void;
     onRefresh?: () => void;
     useLoadMore?: boolean;
-    useMountRefresh?: boolean;
 }
 
 export interface RecyclerListViewState {
@@ -158,7 +158,6 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         },
         refreshType: "normal",
         useLoadMore: false,
-        useMountRefresh: false,
     };
 
     public static propTypes = {};
@@ -190,6 +189,10 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     //by the default item animator also changes the same positions which could lead to inconsistency. Hence, the base item animator which
     //does not perform any such animations will be used.
     private _defaultItemAnimator: ItemAnimator = new BaseItemAnimator();
+    private _refreshStatus: string = "refreshNormal"; // 刷新状态
+    private _endDragPoint = 0; // 用户停止拖动点
+    private _beginDragPoint = 0; // 用户开始拖动点
+    private _momentumEndPoint = PULL_REFRESH_HEIGHT; // 惯性滚动 动画结束时 点位
 
     constructor(props: P, context?: any) {
         super(props, context);
@@ -291,6 +294,10 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     }
 
     public scrollToTop(animate?: boolean): void {
+        if (this.props.onRefresh && Platform.OS === "android") {
+            this.scrollToOffset(0, PULL_REFRESH_HEIGHT, animate);
+            return;
+        }
         this.scrollToOffset(0, 0, animate);
     }
 
@@ -364,8 +371,20 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     public onRefreshEnd = (): void => {
         if (this._scrollComponent) {
             this._scrollComponent.onRefreshEnd();
+            this._refreshStatus = "refreshNormal";
         }
     };
+
+    /**
+     * @todo: 上拉刷新&下拉加载
+     * @function: 终止x下拉刷新
+     */
+    public onRefreshing = (): void => {
+        if (this._scrollComponent) {
+            this._scrollComponent.onRefreshing();
+            this._refreshStatus = "refreshLoading";
+        }
+    }
 
     /**
      * @todo: 上拉刷新&下拉加载
@@ -374,6 +393,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     public onLoadingMore(): void {
         if (this._scrollComponent) {
             this._scrollComponent.onLoadingMore();
+            this._refreshStatus = "loadMoreLoading";
         }
     }
 
@@ -396,6 +416,34 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
             this._scrollComponent.onNoDataToLoad();
         }
     }
+
+    // 手指未离开
+    public onScrollBeginDrag(e: any): void {
+        const target = e.nativeEvent;
+        const y = target.contentOffset.y;
+
+        this._refreshStatus = "drag";
+        this._beginDragPoint = y;
+
+        // @ts-ignore
+        if (this.props.onScrollBeginDrag) {
+            // @ts-ignore
+            this.props.onScrollBeginDrag(e);
+        }
+    }
+
+    // 手指离开
+    public onScrollEndDrag(e: any): void {
+        const target = e.nativeEvent;
+        const y = target.contentOffset.y;
+        this._endDragPoint = y;
+    }
+
+    public onMomentumScrollEnd = (e: any): void => {
+        const target = e.nativeEvent;
+        const y = target.contentOffset.y;
+        this._momentumEndPoint = y;
+    };
 
     public renderCompat(): JSX.Element {
         //TODO:Talha
@@ -422,6 +470,9 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                 ref={(scrollComponent) => this._scrollComponent = scrollComponent as BaseScrollComponent | null}
                 {...this.props}
                 {...this.props.scrollViewProps}
+                onScrollEndDrag={(e: any) => this.onScrollEndDrag(e!)}
+                onScrollBeginDrag={(e: any) => this.onScrollBeginDrag(e)}
+                onMomentumScrollEnd={this.onMomentumScrollEnd}
                 onScroll={this._onScroll}
                 scrollToOverflowEnabled
                 onSizeChanged={this._onSizeChanged}
@@ -439,10 +490,33 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
 
     private _processInitialOffset(): void {
         if (this._pendingScrollToOffset) {
-            const tempOffset = this._pendingScrollToOffset;
-            const offset = { x: tempOffset.x, y: tempOffset.y };
-            if (Platform.OS === "android" && !this.props.isHorizontal && tempOffset.y === 0) {
-                offset.y = 60;
+            const offset = this._pendingScrollToOffset;
+            // tslint:disable-next-line:no-console
+            console.log("偏移数据&偏移点---", offset.y);
+            // tslint:disable-next-line:no-console
+            console.log("偏移数据&开始触摸点---", this._beginDragPoint);
+            // tslint:disable-next-line:no-console
+            console.log("偏移数据&结束触摸点---", this._endDragPoint);
+
+            if (this.props.onRefresh && Platform.OS === "android" && !this.props.isHorizontal) {
+                // tslint:disable-next-line:no-console
+                console.log("偏移数据&当前刷新状态值----", this._refreshStatus);
+                // tslint:disable-next-line:no-console
+                console.log("滚动到最后高度---", this._momentumEndPoint);
+                if (this._refreshStatus === "refreshNormal") {
+                    offset.y = PULL_REFRESH_HEIGHT;
+                } else if (this._refreshStatus === "refreshLoading") {
+                    offset.y = 0.5;
+                    // tslint:disable-next-line:max-line-length
+                } else if (this._refreshStatus === "drag" && this._beginDragPoint === PULL_REFRESH_HEIGHT && this._endDragPoint < PULL_REFRESH_HEIGHT && this._endDragPoint >= 0) {
+                    offset.y = 0.5;
+                } else if (this._refreshStatus === "drag" && this._momentumEndPoint <= 100) {
+                    offset.y = PULL_REFRESH_HEIGHT;
+                }
+            }
+
+            if (this.props.onRefresh && Platform.OS === "ios" && !this.props.isHorizontal && offset.y === 0) {
+                offset.y = ~PULL_REFRESH_HEIGHT;
             }
             this._pendingScrollToOffset = null;
             if (this.props.isHorizontal) {
@@ -450,6 +524,8 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
             } else {
                 offset.x = 0;
             }
+            // tslint:disable-next-line:no-console
+            console.log("偏移数据&偏移实际点---", offset.y);
             setTimeout(() => {
                 this.scrollToOffset(offset.x, offset.y, false);
             }, 0);
@@ -590,15 +666,15 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         if (props.onVisibleIndicesChanged) {
             this._virtualRenderer.attachVisibleItemsListener(props.onVisibleIndicesChanged!);
         }
-        // 安卓首次挂载 会显示刷新界面需要偏移60高度到默认位置
-        let refreshOffset = 0;
+        // 安卓首次挂载 需要偏移60高度 隐藏掉刷新组件
+        let initialOffset = 0;
         if (props.initialOffset !== 0) {
-            refreshOffset = props.initialOffset!;
-        } else if (props.onRefresh && !props.useMountRefresh && Platform.OS === "android") {
-            refreshOffset = 60;
+            initialOffset = props.initialOffset!;
+        } else if (props.onRefresh && Platform.OS === "android") {
+            initialOffset = PULL_REFRESH_HEIGHT;
         }
         this._params = {
-            initialOffset: this._initialOffset ? this._initialOffset : refreshOffset,
+            initialOffset: this._initialOffset ? this._initialOffset : initialOffset,
             initialRenderIndex: props.initialRenderIndex,
             isHorizontal: props.isHorizontal,
             itemCount: props.dataProvider.getSize(),

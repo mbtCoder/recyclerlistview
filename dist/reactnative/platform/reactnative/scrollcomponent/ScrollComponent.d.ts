@@ -24,15 +24,16 @@ export default class ScrollComponent extends BaseScrollComponent {
      */
     private arrowTransform;
     private readonly defaultArrowIcon;
-    private readonly loadMoreHeight;
     private dragState;
     private readonly prStorageKey;
     private flag;
     private timer;
+    private _endDragPoint;
+    private _beginDragPoint;
     constructor(args: ScrollComponentProps);
     scrollTo(x: number, y: number, isAnimated: boolean): void;
-    componentDidMount(): void;
     render(): JSX.Element;
+    onMomentumScrollEnd(e: NativeSyntheticEvent<NativeScrollEvent>): void;
     onScrollBeginDrag(e: NativeSyntheticEvent<NativeScrollEvent>): void;
     onScrollEndDrag(e: NativeSyntheticEvent<NativeScrollEvent>): void;
     /**
@@ -58,6 +59,10 @@ export default class ScrollComponent extends BaseScrollComponent {
      * @function: 刷新结束
      */
     onRefreshEnd(): void;
+    /**
+     * @function: 刷新开始
+     */
+    onRefreshing(): void;
     upState(): void;
     downState(): void;
     private _defaultContainer;
@@ -65,3 +70,4 @@ export default class ScrollComponent extends BaseScrollComponent {
     private readonly _onScroll;
     private readonly _onLayout;
 }
+export declare const PULL_REFRESH_HEIGHT = 60;

@@ -34,10 +34,11 @@ interface CustomRefreshProps {
     loadMoreNoDataText?: string;
     refreshType?: string;
     onRefresh?: () => void;
-    useMountRefresh?: boolean;
     useLoadMore?: boolean;
     flag?: string;
     onScrollBeginDrag?: (event?: NativeSyntheticEvent<NativeScrollEvent>) => void;
+    onScrollEndDrag?: (event?: NativeSyntheticEvent<NativeScrollEvent>) => void;
+    onMomentumScrollEnd?: (event?: NativeSyntheticEvent<NativeScrollEvent>) => void;
     indicatorArrowImg?: {
         style: ViewStyle;
         url: string;
@@ -58,7 +59,6 @@ interface ScrollComponentState {
     prLoading: boolean;
     prArrowDeg: any;
     prTimeDisplay: string;
-    beginScroll: boolean;
     prState: number;
 }
 export default abstract class BaseScrollComponent extends React.Component<ScrollComponentProps, ScrollComponentState> {
@@ -66,6 +66,7 @@ export default abstract class BaseScrollComponent extends React.Component<Scroll
      *  下拉刷新&上拉加载
      */
     abstract onLoadingMore(): void;
+    abstract onRefreshing(): void;
     abstract onRefreshEnd(): void;
     abstract onLoadNormal(): void;
     abstract onNoDataToLoad(): void;
