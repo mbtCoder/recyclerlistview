@@ -44,7 +44,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * TODO: Observe size changes on web to optimize for reflowability
  * TODO: Solve //TSI
  */
-var debounce = require("lodash.debounce");
+// import debounce = require("lodash.debounce");
+var lodash_1 = require("lodash");
 var PropTypes = require("prop-types");
 var React = require("react");
 var ts_object_utils_1 = require("ts-object-utils");
@@ -67,7 +68,7 @@ var RecyclerListView = /** @class */ (function (_super) {
     __extends(RecyclerListView, _super);
     function RecyclerListView(props, context) {
         var _this = _super.call(this, props, context) || this;
-        _this.refreshRequestDebouncer = debounce(function (executable) {
+        _this.refreshRequestDebouncer = lodash_1.debounce(function (executable) {
             executable();
         });
         _this._onEndReachedCalled = false;
@@ -113,6 +114,8 @@ var RecyclerListView = /** @class */ (function (_super) {
             if (_this._scrollComponent) {
                 _this._scrollComponent.onRefreshEnd();
                 _this._refreshStatus = "refreshNormal";
+                _this._pendingScrollToOffset = { x: 0, y: 60 };
+                _this._processInitialOffset();
             }
         };
         /**

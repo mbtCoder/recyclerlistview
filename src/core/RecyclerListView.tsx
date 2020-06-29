@@ -18,7 +18,8 @@
  * TODO: Observe size changes on web to optimize for reflowability
  * TODO: Solve //TSI
  */
-import debounce = require("lodash.debounce");
+// import debounce = require("lodash.debounce");
+import { debounce } from "lodash";
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import { ObjectUtil, Default } from "ts-object-utils";
@@ -372,6 +373,8 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         if (this._scrollComponent) {
             this._scrollComponent.onRefreshEnd();
             this._refreshStatus = "refreshNormal";
+            this._pendingScrollToOffset = { x: 0, y: 60 };
+            this._processInitialOffset();
         }
     };
 
@@ -384,7 +387,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
             this._scrollComponent.onRefreshing();
             this._refreshStatus = "refreshLoading";
         }
-    }
+    };
 
     /**
      * @todo: 上拉刷新&下拉加载
