@@ -132,6 +132,13 @@ var RecyclerListView = /** @class */ (function (_super) {
             var target = e.nativeEvent;
             var y = target.contentOffset.y;
             _this._momentumEndPoint = y;
+            if (y >= ScrollComponent_1.PULL_REFRESH_HEIGHT && y < 90) {
+                _this._refreshStatus = "refreshNormal";
+            }
+            if (y > ScrollComponent_1.ANDROID_REFRESHING_HEIGHT && y <= ScrollComponent_1.PULL_REFRESH_HEIGHT) {
+                _this._refreshStatus = "refreshNormal";
+            }
+            console.log("滚动停止点:-------", y);
         };
         _this._onSizeChanged = function (layout) {
             if (!_this.props.canChangeSize && _this.props.layoutSize) {
@@ -425,19 +432,12 @@ var RecyclerListView = /** @class */ (function (_super) {
                 // tslint:disable-next-line:no-console
                 console.log("偏移数据&当前刷新状态值----", this._refreshStatus);
                 // tslint:disable-next-line:no-console
-                console.log("滚动到最后高度---", this._momentumEndPoint);
+                console.log("滚动到最后高度------------>>>>>", this._momentumEndPoint);
                 if (this._refreshStatus === "refreshNormal") {
                     offset_1.y = ScrollComponent_1.PULL_REFRESH_HEIGHT;
                 }
                 else if (this._refreshStatus === "refreshLoading") {
-                    offset_1.y = 0.5;
-                    // tslint:disable-next-line:max-line-length
-                }
-                else if (this._refreshStatus === "drag" && this._beginDragPoint === ScrollComponent_1.PULL_REFRESH_HEIGHT && this._endDragPoint < ScrollComponent_1.PULL_REFRESH_HEIGHT && this._endDragPoint >= 0) {
-                    offset_1.y = 0.5;
-                }
-                else if (this._refreshStatus === "drag" && this._momentumEndPoint <= 100) {
-                    offset_1.y = ScrollComponent_1.PULL_REFRESH_HEIGHT;
+                    offset_1.y = ScrollComponent_1.ANDROID_REFRESHING_HEIGHT;
                 }
             }
             if (this.props.onRefresh && react_native_1.Platform.OS === "ios" && !this.props.isHorizontal && offset_1.y === 0) {

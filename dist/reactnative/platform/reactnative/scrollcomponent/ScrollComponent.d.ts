@@ -27,9 +27,6 @@ export default class ScrollComponent extends BaseScrollComponent {
     private dragState;
     private readonly prStorageKey;
     private flag;
-    private timer;
-    private _endDragPoint;
-    private _beginDragPoint;
     constructor(args: ScrollComponentProps);
     scrollTo(x: number, y: number, isAnimated: boolean): void;
     render(): JSX.Element;
@@ -71,3 +68,4 @@ export default class ScrollComponent extends BaseScrollComponent {
     private readonly _onLayout;
 }
 export declare const PULL_REFRESH_HEIGHT = 60;
+export declare const ANDROID_REFRESHING_HEIGHT = 0.5;

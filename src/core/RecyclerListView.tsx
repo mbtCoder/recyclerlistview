@@ -39,7 +39,10 @@ import ItemAnimator, { BaseItemAnimator } from "./ItemAnimator";
 import { DebugHandlers } from "..";
 import { ComponentCompat } from "../utils/ComponentCompat";
 //#if [REACT-NATIVE]
-import ScrollComponent, { PULL_REFRESH_HEIGHT } from "../platform/reactnative/scrollcomponent/ScrollComponent";
+import ScrollComponent, {
+    PULL_REFRESH_HEIGHT,
+    ANDROID_REFRESHING_HEIGHT,
+} from "../platform/reactnative/scrollcomponent/ScrollComponent";
 import ViewRenderer from "../platform/reactnative/viewrenderer/ViewRenderer";
 import { Platform, ScrollViewProps, StyleProp, ViewStyle } from "react-native";
 
@@ -446,6 +449,14 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         const target = e.nativeEvent;
         const y = target.contentOffset.y;
         this._momentumEndPoint = y;
+
+        if (y >= PULL_REFRESH_HEIGHT && y < 90) {
+            this._refreshStatus = "refreshNormal";
+        }
+        if (y > ANDROID_REFRESHING_HEIGHT && y <= PULL_REFRESH_HEIGHT) {
+            this._refreshStatus = "refreshNormal";
+        }
+        console.log("滚动停止点:-------", y);
     };
 
     public renderCompat(): JSX.Element {
@@ -505,16 +516,11 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                 // tslint:disable-next-line:no-console
                 console.log("偏移数据&当前刷新状态值----", this._refreshStatus);
                 // tslint:disable-next-line:no-console
-                console.log("滚动到最后高度---", this._momentumEndPoint);
+                console.log("滚动到最后高度------------>>>>>", this._momentumEndPoint);
                 if (this._refreshStatus === "refreshNormal") {
                     offset.y = PULL_REFRESH_HEIGHT;
                 } else if (this._refreshStatus === "refreshLoading") {
-                    offset.y = 0.5;
-                    // tslint:disable-next-line:max-line-length
-                } else if (this._refreshStatus === "drag" && this._beginDragPoint === PULL_REFRESH_HEIGHT && this._endDragPoint < PULL_REFRESH_HEIGHT && this._endDragPoint >= 0) {
-                    offset.y = 0.5;
-                } else if (this._refreshStatus === "drag" && this._momentumEndPoint <= 100) {
-                    offset.y = PULL_REFRESH_HEIGHT;
+                    offset.y = ANDROID_REFRESHING_HEIGHT;
                 }
             }
 

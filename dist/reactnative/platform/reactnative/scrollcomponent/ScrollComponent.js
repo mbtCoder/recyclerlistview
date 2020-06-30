@@ -24,7 +24,7 @@ var __assign = (this && this.__assign) || function () {
     return __assign.apply(this, arguments);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PULL_REFRESH_HEIGHT = void 0;
+exports.ANDROID_REFRESHING_HEIGHT = exports.PULL_REFRESH_HEIGHT = void 0;
 var React = require("react");
 var react_native_1 = require("react-native");
 var BaseScrollComponent_1 = require("../../../core/scrollcomponent/BaseScrollComponent");
@@ -38,6 +38,7 @@ var ItemAnimator_1 = require("../../../core/ItemAnimator");
  */
 var ScrollComponent = /** @class */ (function (_super) {
     __extends(ScrollComponent, _super);
+    // private timer: NodeJS.Timeout;
     function ScrollComponent(args) {
         var _this = _super.call(this, args) || this;
         _this._scrollViewRef = null;
@@ -56,7 +57,7 @@ var ScrollComponent = /** @class */ (function (_super) {
                 var target = event.nativeEvent;
                 var y = target.contentOffset.y;
                 if (_this.dragState) {
-                    if (react_native_1.Platform.OS === "ios") {
+                    if (IOS) {
                         if (y <= ~exports.PULL_REFRESH_HEIGHT) {
                             _this.upState();
                         }
@@ -64,7 +65,7 @@ var ScrollComponent = /** @class */ (function (_super) {
                             _this.downState();
                         }
                     }
-                    else if (react_native_1.Platform.OS === "android") {
+                    else if (ANDROID) {
                         if (y <= 10) {
                             _this.upState();
                         }
@@ -75,7 +76,7 @@ var ScrollComponent = /** @class */ (function (_super) {
                 }
                 else {
                     // 用户快速滑动放手后 导致弹簧到顶部触发
-                    if (y === 0 && react_native_1.Platform.OS === "android") {
+                    if (y === 0 && ANDROID) {
                         _this.setState({
                             prTitle: _this.props.refreshLoadingText,
                             prLoading: true,
@@ -107,9 +108,9 @@ var ScrollComponent = /** @class */ (function (_super) {
          * 下拉刷新&上拉加载
          */
         _this.state = {
-            prTitle: args.refreshNormalText,
+            prTitle: args.refreshLoadingText,
             loadTitle: args.loadMoreNormalText,
-            prLoading: false,
+            prLoading: true,
             prArrowDeg: new react_native_1.Animated.Value(0),
             prTimeDisplay: "暂无更新",
             prState: 0,
@@ -122,8 +123,6 @@ var ScrollComponent = /** @class */ (function (_super) {
                 }],
         };
         _this.dragState = false;
-        _this._endDragPoint = 0;
-        _this._beginDragPoint = 0;
         // tslint:disable-next-line:max-line-length
         _this.defaultArrowIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAABQBAMAAAD8TNiNAAAAJ1BMVEUAAACqqqplZWVnZ2doaGhqampoaGhpaWlnZ2dmZmZlZWVmZmZnZ2duD78kAAAADHRSTlMAA6CYqZOlnI+Kg/B86E+1AAAAhklEQVQ4y+2LvQ3CQAxGLSHEBSg8AAX0jECTnhFosgcjZKr8StE3VHz5EkeRMkF0rzk/P58k9rgOW78j+TE99OoeKpEbCvcPVDJ0OvsJ9bQs6Jxs26h5HCrlr9w8vi8zHphfmI0fcvO/ZXJG8wDzcvDFO2Y/AJj9ADE7gXmlxFMIyVpJ7DECzC9J2EC2ECAAAAAASUVORK5CYII=";
         _this._onScroll = _this._onScroll.bind(_this);
@@ -145,8 +144,7 @@ var ScrollComponent = /** @class */ (function (_super) {
     //
     //         });
     //         this.timer = setTimeout(() => {
-    //             this._scrollViewRef &&
-    //             this._scrollViewRef.scrollTo({x: 0, y: PULL_REFRESH_HEIGHT, animated: true});
+    //             this.scrollTo({x: 0, y: PULL_REFRESH_HEIGHT, animated: true});
     //             this.timer && clearTimeout(this.timer);
     //         }, 1000);
     //     }
@@ -183,7 +181,7 @@ var ScrollComponent = /** @class */ (function (_super) {
                 this.props.onRefresh ? this.renderIndicatorModule() : null,
                 React.createElement(react_native_1.View, { style: {
                         // tslint:disable-next-line:max-line-length
-                        height: react_native_1.Platform.OS === "ios" ? this.props.contentHeight : (SCREEN_HEIGHT - this.props.contentHeight < 0 ? this.props.contentHeight : this._height),
+                        height: IOS ? this.props.contentHeight : (SCREEN_HEIGHT - this.props.contentHeight < 0 ? this.props.contentHeight : this._height),
                         width: this.props.contentWidth,
                     } }, renderContentContainer(contentContainerProps, this.props.children)),
                 this.props.renderFooter ? this.props.renderFooter() : null,
@@ -194,12 +192,15 @@ var ScrollComponent = /** @class */ (function (_super) {
         if (this.props.onMomentumScrollEnd) {
             this.props.onMomentumScrollEnd(e);
         }
-        if (react_native_1.Platform.OS === "android") {
+        if (ANDROID) {
             var target = e.nativeEvent;
             var y = target.contentOffset.y;
-            // 用户惯性滚动完成时  恢复至默认高度
-            if (y <= exports.PULL_REFRESH_HEIGHT && this._beginDragPoint > exports.PULL_REFRESH_HEIGHT && this._endDragPoint > exports.PULL_REFRESH_HEIGHT && this._scrollViewRef) {
-                this._scrollViewRef.scrollTo({ x: 0, y: exports.PULL_REFRESH_HEIGHT, animated: true });
+            /**
+             * 安卓
+             * 用户拖拽后惯性滚动最后点位不足以触发刷新 归为到默认点
+             */
+            if (y <= exports.PULL_REFRESH_HEIGHT && y > exports.ANDROID_REFRESHING_HEIGHT) {
+                this.scrollTo(0, exports.PULL_REFRESH_HEIGHT, true);
             }
         }
     };
@@ -211,7 +212,6 @@ var ScrollComponent = /** @class */ (function (_super) {
         }
         var target = e.nativeEvent;
         var y = target.contentOffset.y;
-        this._beginDragPoint = y;
         this.dragState = true;
     };
     // 手指离开
@@ -220,18 +220,22 @@ var ScrollComponent = /** @class */ (function (_super) {
         if (this.props.onScrollEndDrag) {
             this.props.onScrollEndDrag(e);
         }
-        if (this._scrollViewRef && this.props.onRefresh) {
+        if (this.props.onRefresh) {
             var target = e.nativeEvent;
             var y = target.contentOffset.y;
-            this._endDragPoint = y;
             this.dragState = false;
-            if (y <= exports.PULL_REFRESH_HEIGHT && y >= 10 && react_native_1.Platform.OS === "android") {
-                this._scrollViewRef.scrollTo({ x: 0, y: exports.PULL_REFRESH_HEIGHT, animated: true });
+            console.log("scrolll---最后拖拽点位----", y);
+            /**
+             * 安卓
+             * 用户拖拽不足以触发刷新 归为到默认点
+             */
+            if (ANDROID && y <= exports.PULL_REFRESH_HEIGHT && y > exports.ANDROID_REFRESHING_HEIGHT) {
+                this.scrollTo(0, exports.PULL_REFRESH_HEIGHT, true);
             }
             if (this.state.prState) {
                 // ios固定到下拉刷新模块高度
-                if (react_native_1.Platform.OS === "ios") {
-                    this._scrollViewRef.scrollTo({ x: 0, y: ~exports.PULL_REFRESH_HEIGHT, animated: true });
+                if (IOS) {
+                    this.scrollTo(0, ~exports.PULL_REFRESH_HEIGHT, true);
                 }
                 this.setState({
                     prTitle: this.props.refreshLoadingText,
@@ -250,11 +254,7 @@ var ScrollComponent = /** @class */ (function (_super) {
     ScrollComponent.prototype.renderIndicatorModule = function () {
         var type = this.props.refreshType;
         var jsx = [this.renderNormalContent()];
-        return (React.createElement(react_native_1.View, { style: react_native_1.Platform.OS === "ios" ? styles.pullRefresh : {
-                width: SCREEN_WIDTH,
-                height: exports.PULL_REFRESH_HEIGHT,
-                justifyContent: "center",
-            } }, jsx.map(function (item, index) {
+        return (React.createElement(react_native_1.View, { style: IOS ? styles.pullRefresh_ios : styles.pullRefresh_android }, jsx.map(function (item, index) {
             return React.createElement(react_native_1.View, { key: index }, item);
         })));
     };
@@ -379,31 +379,29 @@ var ScrollComponent = /** @class */ (function (_super) {
         });
         // 存一下刷新时间
         async_storage_1.default.setItem(this.prStorageKey, now.toString());
-        if (this._scrollViewRef) {
-            if (react_native_1.Platform.OS === "ios") {
-                this._scrollViewRef.scrollTo({ x: 0, y: 0, animated: true });
-            }
-            else if (react_native_1.Platform.OS === "android") {
-                this._scrollViewRef.scrollTo({ x: 0, y: exports.PULL_REFRESH_HEIGHT, animated: true });
-            }
+        if (IOS) {
+            this.scrollTo(0, 0, true);
+        }
+        else if (ANDROID) {
+            this.scrollTo(0, exports.PULL_REFRESH_HEIGHT, true);
         }
     };
     /**
      * @function: 刷新开始
      */
     ScrollComponent.prototype.onRefreshing = function () {
-        if (this.props.onRefresh && this._scrollViewRef) {
+        if (this.props.onRefresh) {
             this.setState({
                 prTitle: this.props.refreshLoadingText,
                 prLoading: true,
                 prArrowDeg: new react_native_1.Animated.Value(0),
             });
-            if (react_native_1.Platform.OS === "ios") {
+            if (IOS) {
                 console.log("RCL IOS 开始变成刷新状态");
-                this._scrollViewRef.scrollTo({ x: 0, y: ~exports.PULL_REFRESH_HEIGHT, animated: true });
+                this.scrollTo(0, ~exports.PULL_REFRESH_HEIGHT, true);
             }
             else {
-                this._scrollViewRef.scrollTo({ x: 0, y: 0.5, animated: true });
+                this.scrollTo(0, exports.ANDROID_REFRESHING_HEIGHT, true);
             }
             this.props.onRefresh();
         }
@@ -448,8 +446,11 @@ var ScrollComponent = /** @class */ (function (_super) {
 }(BaseScrollComponent_1.default));
 exports.default = ScrollComponent;
 exports.PULL_REFRESH_HEIGHT = 60;
+exports.ANDROID_REFRESHING_HEIGHT = 0.5;
 var SCREEN_WIDTH = react_native_1.Dimensions.get("window").width;
 var SCREEN_HEIGHT = react_native_1.Dimensions.get("window").height;
+var ANDROID = react_native_1.Platform.OS === "android";
+var IOS = react_native_1.Platform.OS === "ios";
 var dateFormat = function (dateTime, fmt) {
     var date = new Date(dateTime);
     var tmp = fmt || "yyyy-MM-dd";
@@ -474,7 +475,7 @@ var dateFormat = function (dateTime, fmt) {
     return tmp;
 };
 var styles = react_native_1.StyleSheet.create({
-    pullRefresh: {
+    pullRefresh_ios: {
         position: "absolute",
         top: ~exports.PULL_REFRESH_HEIGHT,
         left: 0,
@@ -484,16 +485,16 @@ var styles = react_native_1.StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
+    pullRefresh_android: {
+        width: SCREEN_WIDTH,
+        height: exports.PULL_REFRESH_HEIGHT,
+        justifyContent: "center",
+    },
     loadMore: {
         height: 35,
         marginBottom: 10,
         alignItems: "center",
         justifyContent: "center",
-    },
-    text: {
-        height: 70,
-        backgroundColor: "#fafafa",
-        color: "#979aa0",
     },
     prText: {
         marginBottom: 4,
@@ -504,9 +505,6 @@ var styles = react_native_1.StyleSheet.create({
         marginBottom: 4,
         fontSize: 12,
         color: "#979aa0",
-    },
-    lmState: {
-        fontSize: 12,
     },
     indicatorContent: {
         flexDirection: "row",
