@@ -12,6 +12,8 @@ import ProgressiveListView from "./core/ProgressiveListView";
 import { DebugHandlers } from "./core/devutils/debughandlers/DebugHandlers";
 import { ComponentCompat } from "./utils/ComponentCompat";
 
+const NoDataProvider = new DataProvider((r1, r2) => r1 !== r2).cloneWithRows(["NO_DATA_PROVIDER"]);
+
 export {
     ContextProvider,
     DataProvider,
@@ -34,4 +36,5 @@ export {
     BaseDataProvider,
     ComponentCompat,
     RecyclerListViewRef,
+    NoDataProvider,
 };

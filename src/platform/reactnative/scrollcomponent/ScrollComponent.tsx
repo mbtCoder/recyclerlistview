@@ -54,9 +54,9 @@ export default class ScrollComponent extends BaseScrollComponent {
          * 下拉刷新&上拉加载
          */
         this.state = {
-            prTitle: args.refreshLoadingText!,
+            prTitle: ANDROID ? args.refreshLoadingText! : args.refreshNormalText!,
             loadTitle: args.loadMoreNormalText!,
-            prLoading: true,
+            prLoading: ANDROID,
             prArrowDeg: new Animated.Value(0),
             prTimeDisplay: "暂无更新",
             prState: 0,
@@ -135,13 +135,9 @@ export default class ScrollComponent extends BaseScrollComponent {
                       onScrollBeginDrag={(e: any) => this.onScrollBeginDrag(e)}
                       onMomentumScrollEnd={(e: any) => this.onMomentumScrollEnd(e)}>
                 <View style={{ flexDirection: this.props.isHorizontal ? "row" : "column" }}>
-                    {this.props.onRefresh ? this.renderIndicatorModule() : null}
+                    {!this.props.isHorizontal && this.props.onRefresh ? this.renderIndicatorModule() : null}
 
-                    <View style={{
-                        // tslint:disable-next-line:max-line-length
-                        height: IOS ? this.props.contentHeight : (SCREEN_HEIGHT - this.props.contentHeight < 0 ? this.props.contentHeight : this._height),
-                        width: this.props.contentWidth,
-                    }}>
+                    <View style={{ height: this._getContentHeight(), width: this.props.contentWidth }}>
                         {renderContentContainer(contentContainerProps, this.props.children)}
                     </View>
 
@@ -190,7 +186,7 @@ export default class ScrollComponent extends BaseScrollComponent {
         if (this.props.onScrollEndDrag) {
             this.props.onScrollEndDrag(e);
         }
-        if (this.props.onRefresh) {
+        if (!this.props.isHorizontal && this.props.onRefresh) {
             const target = e.nativeEvent;
             const y = target.contentOffset.y;
 
@@ -393,7 +389,7 @@ export default class ScrollComponent extends BaseScrollComponent {
      * @function: 刷新开始
      */
     public onRefreshing(): void {
-        if (this.props.onRefresh) {
+        if (!this.props.isHorizontal && this.props.onRefresh) {
             this.setState({
                 prTitle: this.props.refreshLoadingText!,
                 prLoading: true,
@@ -440,6 +436,14 @@ export default class ScrollComponent extends BaseScrollComponent {
         }).start();
     }
 
+    private _getContentHeight(): number {
+        let height: number = SCREEN_HEIGHT;
+        if (this.props.dataProvider.getSize() > 0) {
+            height = this.props.dataProvider.getAllData()[0] === "NO_DATA_PROVIDER" ? this._height : this.props.contentHeight;
+        }
+        return height;
+    }
+
     private _defaultContainer(props: object, children: React.ReactNode): React.ReactNode | null {
         return (
             <View {...props}>
@@ -460,7 +464,7 @@ export default class ScrollComponent extends BaseScrollComponent {
         }
 
         // 开启下拉刷新时执行
-        if (this.props.onRefresh) {
+        if (!this.props.isHorizontal && this.props.onRefresh) {
             // @ts-ignore
             const target = event.nativeEvent;
             const y = target.contentOffset.y;
@@ -512,6 +516,7 @@ export default class ScrollComponent extends BaseScrollComponent {
 
 export const PULL_REFRESH_HEIGHT = 60;
 export const ANDROID_REFRESHING_HEIGHT = 0.5;
+const NO_DATA_PROVIDER = "NO_DATA_PROVIDER";
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 const ANDROID = Platform.OS === "android";
