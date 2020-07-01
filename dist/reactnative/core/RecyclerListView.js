@@ -44,8 +44,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * TODO: Observe size changes on web to optimize for reflowability
  * TODO: Solve //TSI
  */
-// import debounce = require("lodash.debounce");
-var lodash_1 = require("lodash");
+var debounce = require("lodash.debounce");
 var PropTypes = require("prop-types");
 var React = require("react");
 var ts_object_utils_1 = require("ts-object-utils");
@@ -68,7 +67,7 @@ var RecyclerListView = /** @class */ (function (_super) {
     __extends(RecyclerListView, _super);
     function RecyclerListView(props, context) {
         var _this = _super.call(this, props, context) || this;
-        _this.refreshRequestDebouncer = lodash_1.debounce(function (executable) {
+        _this.refreshRequestDebouncer = debounce(function (executable) {
             executable();
         });
         _this._onEndReachedCalled = false;
@@ -648,6 +647,7 @@ var RecyclerListView = /** @class */ (function (_super) {
                 if (windowBound - lastOffset <= ts_object_utils_1.Default.value(this.props.onEndReachedThreshold, 0)) {
                     if (this.props.onEndReached && !this._onEndReachedCalled) {
                         this._onEndReachedCalled = true;
+                        console.log("看看结果----->>>", this._refreshStatus);
                         if (this.props.useLoadMore) {
                             this.props.onEndReached();
                         } // 开放接口判断何时不处理上拉加载

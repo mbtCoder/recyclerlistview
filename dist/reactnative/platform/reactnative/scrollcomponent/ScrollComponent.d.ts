@@ -62,6 +62,7 @@ export default class ScrollComponent extends BaseScrollComponent {
     onRefreshing(): void;
     upState(): void;
     downState(): void;
+    private _getContentHeight;
     private _defaultContainer;
     private _getScrollViewRef;
     private readonly _onScroll;

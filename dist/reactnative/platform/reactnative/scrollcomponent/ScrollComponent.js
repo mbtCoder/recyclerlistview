@@ -52,7 +52,7 @@ var ScrollComponent = /** @class */ (function (_super) {
                 _this.props.onScroll(contentOffset.x, contentOffset.y, event);
             }
             // 开启下拉刷新时执行
-            if (_this.props.onRefresh) {
+            if (!_this.props.isHorizontal && _this.props.onRefresh) {
                 // @ts-ignore
                 var target = event.nativeEvent;
                 var y = target.contentOffset.y;
@@ -108,9 +108,9 @@ var ScrollComponent = /** @class */ (function (_super) {
          * 下拉刷新&上拉加载
          */
         _this.state = {
-            prTitle: args.refreshLoadingText,
+            prTitle: ANDROID ? args.refreshLoadingText : args.refreshNormalText,
             loadTitle: args.loadMoreNormalText,
-            prLoading: true,
+            prLoading: ANDROID,
             prArrowDeg: new react_native_1.Animated.Value(0),
             prTimeDisplay: "暂无更新",
             prState: 0,
@@ -178,12 +178,8 @@ var ScrollComponent = /** @class */ (function (_super) {
         // } = this.props;
         return (React.createElement(Scroller, __assign({ ref: this._getScrollViewRef, removeClippedSubviews: false, scrollEventThrottle: this.props.scrollThrottle }, this.props, { horizontal: this.props.isHorizontal, onScroll: this._onScroll, onLayout: (!this._isSizeChangedCalledOnce || this.props.canChangeSize) ? this._onLayout : this.props.onLayout, bounces: !!this.props.onRefresh, onScrollEndDrag: function (e) { return _this.onScrollEndDrag(e); }, onScrollBeginDrag: function (e) { return _this.onScrollBeginDrag(e); }, onMomentumScrollEnd: function (e) { return _this.onMomentumScrollEnd(e); } }),
             React.createElement(react_native_1.View, { style: { flexDirection: this.props.isHorizontal ? "row" : "column" } },
-                this.props.onRefresh ? this.renderIndicatorModule() : null,
-                React.createElement(react_native_1.View, { style: {
-                        // tslint:disable-next-line:max-line-length
-                        height: IOS ? this.props.contentHeight : (SCREEN_HEIGHT - this.props.contentHeight < 0 ? this.props.contentHeight : this._height),
-                        width: this.props.contentWidth,
-                    } }, renderContentContainer(contentContainerProps, this.props.children)),
+                !this.props.isHorizontal && this.props.onRefresh ? this.renderIndicatorModule() : null,
+                React.createElement(react_native_1.View, { style: { height: this._getContentHeight(), width: this.props.contentWidth } }, renderContentContainer(contentContainerProps, this.props.children)),
                 this.props.renderFooter ? this.props.renderFooter() : null,
                 this.props.useLoadMore && this.props.onEndReached ? this.renderIndicatorContentBottom() : null)));
     };
@@ -220,7 +216,7 @@ var ScrollComponent = /** @class */ (function (_super) {
         if (this.props.onScrollEndDrag) {
             this.props.onScrollEndDrag(e);
         }
-        if (this.props.onRefresh) {
+        if (!this.props.isHorizontal && this.props.onRefresh) {
             var target = e.nativeEvent;
             var y = target.contentOffset.y;
             this.dragState = false;
@@ -390,7 +386,7 @@ var ScrollComponent = /** @class */ (function (_super) {
      * @function: 刷新开始
      */
     ScrollComponent.prototype.onRefreshing = function () {
-        if (this.props.onRefresh) {
+        if (!this.props.isHorizontal && this.props.onRefresh) {
             this.setState({
                 prTitle: this.props.refreshLoadingText,
                 prLoading: true,
@@ -432,6 +428,13 @@ var ScrollComponent = /** @class */ (function (_super) {
             easing: react_native_1.Easing.inOut(react_native_1.Easing.quad),
         }).start();
     };
+    ScrollComponent.prototype._getContentHeight = function () {
+        var height = SCREEN_HEIGHT;
+        if (this.props.dataProvider.getSize() > 0) {
+            height = this.props.dataProvider.getAllData()[0] === "NO_DATA_PROVIDER" ? this._height : this.props.contentHeight;
+        }
+        return height;
+    };
     ScrollComponent.prototype._defaultContainer = function (props, children) {
         return (React.createElement(react_native_1.View, __assign({}, props), children));
     };
@@ -447,6 +450,7 @@ var ScrollComponent = /** @class */ (function (_super) {
 exports.default = ScrollComponent;
 exports.PULL_REFRESH_HEIGHT = 60;
 exports.ANDROID_REFRESHING_HEIGHT = 0.5;
+var NO_DATA_PROVIDER = "NO_DATA_PROVIDER";
 var SCREEN_WIDTH = react_native_1.Dimensions.get("window").width;
 var SCREEN_HEIGHT = react_native_1.Dimensions.get("window").height;
 var ANDROID = react_native_1.Platform.OS === "android";

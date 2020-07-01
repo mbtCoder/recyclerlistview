@@ -11,4 +11,5 @@ import { GridLayoutManager } from "./core/layoutmanager/GridLayoutManager";
 import ProgressiveListView from "./core/ProgressiveListView";
 import { DebugHandlers } from "./core/devutils/debughandlers/DebugHandlers";
 import { ComponentCompat } from "./utils/ComponentCompat";
-export { ContextProvider, DataProvider, LayoutProvider, BaseLayoutProvider, LayoutManager, WrapGridLayoutManager, GridLayoutProvider, GridLayoutManager, RecyclerListView, ProgressiveListView, BaseItemAnimator, BaseScrollView, AutoScroll, Dimension, Point, Layout, OnRecreateParams, DebugHandlers, BaseDataProvider, ComponentCompat, RecyclerListViewRef, };
+declare const NoDataProvider: DataProvider;
+export { ContextProvider, DataProvider, LayoutProvider, BaseLayoutProvider, LayoutManager, WrapGridLayoutManager, GridLayoutProvider, GridLayoutManager, RecyclerListView, ProgressiveListView, BaseItemAnimator, BaseScrollView, AutoScroll, Dimension, Point, Layout, OnRecreateParams, DebugHandlers, BaseDataProvider, ComponentCompat, RecyclerListViewRef, NoDataProvider, };

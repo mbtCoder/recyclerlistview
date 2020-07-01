@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ComponentCompat = exports.BaseDataProvider = exports.AutoScroll = exports.BaseScrollView = exports.BaseItemAnimator = exports.ProgressiveListView = exports.RecyclerListView = exports.GridLayoutManager = exports.GridLayoutProvider = exports.WrapGridLayoutManager = exports.LayoutManager = exports.BaseLayoutProvider = exports.LayoutProvider = exports.DataProvider = exports.ContextProvider = void 0;
+exports.NoDataProvider = exports.ComponentCompat = exports.BaseDataProvider = exports.AutoScroll = exports.BaseScrollView = exports.BaseItemAnimator = exports.ProgressiveListView = exports.RecyclerListView = exports.GridLayoutManager = exports.GridLayoutProvider = exports.WrapGridLayoutManager = exports.LayoutManager = exports.BaseLayoutProvider = exports.LayoutProvider = exports.DataProvider = exports.ContextProvider = void 0;
 var ContextProvider_1 = require("./core/dependencies/ContextProvider");
 exports.ContextProvider = ContextProvider_1.default;
 var DataProvider_1 = require("./core/dependencies/DataProvider");
@@ -28,4 +28,6 @@ var ProgressiveListView_1 = require("./core/ProgressiveListView");
 exports.ProgressiveListView = ProgressiveListView_1.default;
 var ComponentCompat_1 = require("./utils/ComponentCompat");
 Object.defineProperty(exports, "ComponentCompat", { enumerable: true, get: function () { return ComponentCompat_1.ComponentCompat; } });
+var NoDataProvider = new DataProvider_1.default(function (r1, r2) { return r1 !== r2; }).cloneWithRows(["NO_DATA_PROVIDER"]);
+exports.NoDataProvider = NoDataProvider;
 //# sourceMappingURL=index.js.map
