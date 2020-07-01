@@ -825,7 +825,6 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                 if (windowBound - lastOffset <= Default.value<number>(this.props.onEndReachedThreshold, 0)) {
                     if (this.props.onEndReached && !this._onEndReachedCalled) {
                         this._onEndReachedCalled = true;
-                        console.log("看看结果----->>>", this._refreshStatus);
                         if (this.props.useLoadMore) {
                             this.props.onEndReached();
                         } // 开放接口判断何时不处理上拉加载

@@ -438,8 +438,10 @@ export default class ScrollComponent extends BaseScrollComponent {
 
     private _getContentHeight(): number {
         let height: number = SCREEN_HEIGHT;
-        if (this.props.dataProvider.getSize() > 0) {
-            height = this.props.dataProvider.getAllData()[0] === "NO_DATA_PROVIDER" ? this._height : this.props.contentHeight;
+        if (this.props.dataProvider.getSize() > 0 && this.props.dataProvider.getAllData()[0] === NO_DATA_PROVIDER) {
+            height = this._height;
+        } else {
+            height = this.props.contentHeight < this._height ? this._height : this.props.contentHeight;
         }
         return height;
     }

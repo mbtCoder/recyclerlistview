@@ -647,7 +647,6 @@ var RecyclerListView = /** @class */ (function (_super) {
                 if (windowBound - lastOffset <= ts_object_utils_1.Default.value(this.props.onEndReachedThreshold, 0)) {
                     if (this.props.onEndReached && !this._onEndReachedCalled) {
                         this._onEndReachedCalled = true;
-                        console.log("看看结果----->>>", this._refreshStatus);
                         if (this.props.useLoadMore) {
                             this.props.onEndReached();
                         } // 开放接口判断何时不处理上拉加载
