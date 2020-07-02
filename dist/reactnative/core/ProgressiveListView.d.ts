@@ -23,6 +23,8 @@ export default class ProgressiveListView extends RecyclerListView<ProgressiveLis
         loadMoreNormalText: string;
         loadMoreNoDataText: string;
         loadMoreLoadingText: string;
+        refreshIndicatorColor: string;
+        loadMoreIndicatorColor: string;
         indicatorArrowImg: {
             style: {};
             url: string;

@@ -21,7 +21,8 @@ export interface ScrollComponentProps extends CustomRefreshProps {
     renderAheadOffset: number;
 }
 /**
- *  下拉刷新&上拉加载 类型补充
+ * @todo: 下拉刷新&上拉加载
+ * @description: 类型补充
  */
 interface CustomRefreshProps {
     scrollViewProps?: ScrollViewProps;
@@ -32,6 +33,8 @@ interface CustomRefreshProps {
     loadMoreNormalText?: string;
     loadMoreLoadingText?: string;
     loadMoreNoDataText?: string;
+    refreshIndicatorColor?: string;
+    loadMoreIndicatorColor?: string;
     refreshType?: string;
     onRefresh?: () => void;
     useLoadMore?: boolean;
@@ -51,7 +54,8 @@ interface CustomRefreshProps {
     dataProvider: BaseDataProvider;
 }
 /**
- *  下拉刷新&上拉加载 类型补充
+ * @todo: 下拉刷新&上拉加载
+ * @description: 类型补充
  */
 interface ScrollComponentState {
     loadTitle: string;
@@ -63,7 +67,8 @@ interface ScrollComponentState {
 }
 export default abstract class BaseScrollComponent extends React.Component<ScrollComponentProps, ScrollComponentState> {
     /**
-     *  下拉刷新&上拉加载
+     * @todo: 下拉刷新&上拉加载
+     * @description: 类型补充
      */
     abstract onLoadingMore(): void;
     abstract onRefreshing(): void;

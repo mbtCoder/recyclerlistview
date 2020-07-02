@@ -67,7 +67,7 @@ export interface RecyclerListViewProps {
     scrollViewProps?: ScrollViewProps;
     applyWindowCorrection?: (offsetX: number, offsetY: number, windowCorrection: WindowCorrection) => void;
     /**
-     * 下拉刷新&上拉加载
+     * @todo: 下拉刷新&上拉加载
      */
     flag?: string;
     onLoadingMore?: () => void;
@@ -92,7 +92,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         onEndReachedThreshold: number;
         renderAheadOffset: number;
         /**
-         * 下拉刷新&上拉加载
+         * @todo: 下拉刷新&上拉加载
          */
         refreshReleaseText: string;
         refreshLoadingText: string;
@@ -100,6 +100,8 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         loadMoreNormalText: string;
         loadMoreNoDataText: string;
         loadMoreLoadingText: string;
+        refreshIndicatorColor: string;
+        loadMoreIndicatorColor: string;
         indicatorArrowImg: {
             style: {};
             url: string;
@@ -126,10 +128,10 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     private _scrollComponent;
     private _windowCorrection;
     private _defaultItemAnimator;
+    /**
+     * @todo: 下拉刷新&上拉加载
+     */
     private _refreshStatus;
-    private _endDragPoint;
-    private _beginDragPoint;
-    private _momentumEndPoint;
     constructor(props: P, context?: any);
     componentWillReceivePropsCompat(newProps: RecyclerListViewProps): void;
     componentDidUpdate(): void;
@@ -149,32 +151,44 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     getContentDimension(): Dimension;
     forceRerender(): void;
     /**
-     * @todo: 上拉刷新&下拉加载
-     * @function: 终止x下拉刷新
+     * @todo: 下拉刷新&上拉加载
+     * @function: 终止下拉刷新
      */
     onRefreshEnd: () => void;
     /**
-     * @todo: 上拉刷新&下拉加载
-     * @function: 终止x下拉刷新
+     * @todo: 下拉刷新&上拉加载
+     * @function: 开始下拉刷新
      */
     onRefreshing: () => void;
     /**
-     * @todo: 上拉刷新&下拉加载
-     * @function: 上拉加载更多
+     * @todo: 下拉刷新&上拉加载
+     * @function: 开始加载更多
      */
     onLoadingMore(): void;
     /**
-     * @todo: 上拉刷新&下拉加载
+     * @todo: 下拉刷新&上拉加载
      * @function: 上拉加载正常状态
      */
     onLoadNormal(): void;
     /**
-     * @todo: 上拉刷新&下拉加载
+     * @todo: 下拉刷新&上拉加载
      * @function: 没有数据可加载
      */
     onNoDataToLoad(): void;
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 用户开始拖拽
+     */
     onScrollBeginDrag(e: any): void;
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 用户停止拖拽
+     */
     onScrollEndDrag(e: any): void;
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 滚动动画结束回调
+     */
     onMomentumScrollEnd: (e: any) => void;
     renderCompat(): JSX.Element;
     protected getVirtualRenderer(): VirtualRenderer;

@@ -34,7 +34,7 @@ export default class ScrollComponent extends BaseScrollComponent {
     private _scrollViewRef: ScrollView | null = null;
 
     /**
-     * 上拉加载&下拉刷新
+     * @todo: 下拉刷新&上拉加载
      */
     private arrowTransform: TransformsStyle;
     private readonly defaultArrowIcon: string; // 默认下拉刷新箭头图标
@@ -51,7 +51,7 @@ export default class ScrollComponent extends BaseScrollComponent {
         this._isSizeChangedCalledOnce = false;
 
         /**
-         * 下拉刷新&上拉加载
+         * @todo: 下拉刷新&上拉加载
          */
         this.state = {
             prTitle: ANDROID ? args.refreshLoadingText! : args.refreshNormalText!,
@@ -63,12 +63,12 @@ export default class ScrollComponent extends BaseScrollComponent {
         };
         this.flag = args.flag;
         this.prStorageKey = "prTimeKey";
+        this.dragState = false;
         this.arrowTransform = {
             transform: [{
                 rotate: "",
             }],
         };
-        this.dragState = false;
         // tslint:disable-next-line:max-line-length
         this.defaultArrowIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAABQBAMAAAD8TNiNAAAAJ1BMVEUAAACqqqplZWVnZ2doaGhqampoaGhpaWlnZ2dmZmZlZWVmZmZnZ2duD78kAAAADHRSTlMAA6CYqZOlnI+Kg/B86E+1AAAAhklEQVQ4y+2LvQ3CQAxGLSHEBSg8AAX0jECTnhFosgcjZKr8StE3VHz5EkeRMkF0rzk/P58k9rgOW78j+TE99OoeKpEbCvcPVDJ0OvsJ9bQs6Jxs26h5HCrlr9w8vi8zHphfmI0fcvO/ZXJG8wDzcvDFO2Y/AJj9ADE7gXmlxFMIyVpJ7DECzC9J2EC2ECAAAAAASUVORK5CYII=";
         this._onScroll = this._onScroll.bind(this);
@@ -149,6 +149,10 @@ export default class ScrollComponent extends BaseScrollComponent {
         );
     }
 
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 滚动动画结束回调
+     */
     public onMomentumScrollEnd(e: NativeSyntheticEvent<NativeScrollEvent>): void {
         // 回调给父级
         if (this.props.onMomentumScrollEnd) {
@@ -168,19 +172,23 @@ export default class ScrollComponent extends BaseScrollComponent {
         }
     }
 
-    // 手指未离开
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 用户开始拖拽
+     */
     public onScrollBeginDrag(e: NativeSyntheticEvent<NativeScrollEvent>): void {
         // 回调给父级
         if (this.props.onScrollBeginDrag) {
             this.props.onScrollBeginDrag(e);
         }
-        const target = e.nativeEvent;
-        const y = target.contentOffset.y;
 
         this.dragState = true;
     }
 
-    // 手指离开
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 用户停止拖拽
+     */
     public onScrollEndDrag(e: NativeSyntheticEvent<NativeScrollEvent>): void {
         // 回调给父级
         if (this.props.onScrollEndDrag) {
@@ -189,10 +197,8 @@ export default class ScrollComponent extends BaseScrollComponent {
         if (!this.props.isHorizontal && this.props.onRefresh) {
             const target = e.nativeEvent;
             const y = target.contentOffset.y;
-
             this.dragState = false;
 
-            console.log("scrolll---最后拖拽点位----", y);
             /**
              * 安卓
              * 用户拖拽不足以触发刷新 归为到默认点
@@ -201,9 +207,9 @@ export default class ScrollComponent extends BaseScrollComponent {
                 this.scrollTo(0, PULL_REFRESH_HEIGHT, true);
             }
             if (this.state.prState) {
-                // ios固定到下拉刷新模块高度
-                if (IOS) {
-                    this.scrollTo(0, ~PULL_REFRESH_HEIGHT, true);
+
+                if (IOS) { // iOS已经触发下拉刷新 当前点归为到刷新点 -60高度
+                    this.scrollTo(0, ~PULL_REFRESH_HEIGHT, false);
                 }
 
                 this.setState({
@@ -220,7 +226,8 @@ export default class ScrollComponent extends BaseScrollComponent {
     }
 
     /**
-     * 下拉刷新模块
+     * @todo: 下拉刷新&上拉加载
+     * @function: 下拉刷新指示器模块
      */
     public renderIndicatorModule(): JSX.Element {
         const type = this.props.refreshType;
@@ -235,6 +242,10 @@ export default class ScrollComponent extends BaseScrollComponent {
         );
     }
 
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 下拉刷新模块
+     */
     public renderNormalContent(): JSX.Element {
         this.arrowTransform = {
             transform: [{
@@ -271,7 +282,7 @@ export default class ScrollComponent extends BaseScrollComponent {
                 jsxarr.push(null);
             }
         } else if (this.state.prLoading) {
-            jsxarr.push(<ActivityIndicator style={indicatorStyle} animating color={"#488eff"}/>);
+            jsxarr.push(<ActivityIndicator style={indicatorStyle} animating color={this.props.refreshIndicatorColor}/>);
         } else {
             jsxarr.push(null);
         }
@@ -311,6 +322,10 @@ export default class ScrollComponent extends BaseScrollComponent {
 
     }
 
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 上拉加载指示器模块
+     */
     public renderIndicatorContentBottom(): JSX.Element {
         const jsx = [this.renderBottomContent()];
 
@@ -324,6 +339,10 @@ export default class ScrollComponent extends BaseScrollComponent {
         );
     }
 
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 上拉加载模块
+     */
     public renderBottomContent(): JSX.Element[] {
         const jsx = [];
         const indicatorStyle: ViewStyle = {
@@ -336,7 +355,7 @@ export default class ScrollComponent extends BaseScrollComponent {
 
         if (this.state.loadTitle === this.props.loadMoreLoadingText) {
             jsx.push(<ActivityIndicator key={"bottom_activityIndicator"} style={indicatorStyle} animating
-                                        color={"#488eff"}/>);
+                                        color={this.props.loadMoreIndicatorColor}/>);
         }
 
         jsx.push(<Text key={2} style={{ color: "#979aa0" }}>{this.state.loadTitle}</Text>);
@@ -345,28 +364,32 @@ export default class ScrollComponent extends BaseScrollComponent {
     }
 
     /**
-     *  上拉加载正常状态
+     * @todo: 下拉刷新&上拉加载
+     * @function: 上拉加载Normal状态
      */
     public onLoadNormal(): void {
         this.setState({ loadTitle: this.props.loadMoreNormalText! });
     }
 
     /**
-     * 上拉加载更多
+     * @todo: 下拉刷新&上拉加载
+     * @function: 正在加载更多
      */
     public onLoadingMore(): void {
         this.setState({ loadTitle: this.props.loadMoreLoadingText! });
     }
 
     /**
-     * 没有数据可加载
+     * @todo: 下拉刷新&上拉加载
+     * @function: 无数据状态
      */
     public onNoDataToLoad(): void {
         this.setState({ loadTitle: this.props.loadMoreNoDataText! });
     }
 
     /**
-     * @function: 刷新结束
+     * @todo: 下拉刷新&上拉加载
+     * @function: 结束刷新
      */
     public onRefreshEnd(): void {
         const now = new Date().getTime();
@@ -376,17 +399,14 @@ export default class ScrollComponent extends BaseScrollComponent {
             prTimeDisplay: dateFormat(now, "yyyy-MM-dd hh:mm"),
         });
 
-        // 存一下刷新时间
+        // 持久化上次刷新完成时间
         AsyncStorage.setItem(this.prStorageKey, now.toString());
-        if (IOS) {
-            this.scrollTo(0, 0, true);
-        } else if (ANDROID) {
-            this.scrollTo(0, PULL_REFRESH_HEIGHT, true);
-        }
+        this.scrollTo(0, ANDROID ? PULL_REFRESH_HEIGHT : 0, true);
     }
 
     /**
-     * @function: 刷新开始
+     * @todo: 下拉刷新&上拉加载
+     * @function: 开始刷新
      */
     public onRefreshing(): void {
         if (!this.props.isHorizontal && this.props.onRefresh) {
@@ -397,17 +417,18 @@ export default class ScrollComponent extends BaseScrollComponent {
             });
 
             if (IOS) {
-                console.log("RCL IOS 开始变成刷新状态");
                 this.scrollTo(0, ~PULL_REFRESH_HEIGHT, true);
             } else {
                 this.scrollTo(0, ANDROID_REFRESHING_HEIGHT, true);
             }
-
             this.props.onRefresh();
         }
     }
 
-    // 高于临界值状态
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 高于临界值状态
+     */
     public upState(): void {
         this.setState({
             prTitle: this.props.refreshReleaseText!,
@@ -417,12 +438,15 @@ export default class ScrollComponent extends BaseScrollComponent {
         Animated.timing(this.state.prArrowDeg, {
             useNativeDriver: BaseItemAnimator.USE_NATIVE_DRIVER,
             toValue: 1,
-            duration: 100,
+            duration: 125,
             easing: Easing.inOut(Easing.quad),
         }).start();
     }
 
-    // 低于临界值状态
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 低于临界值状态
+     */
     public downState(): void {
         this.setState({
             prTitle: this.props.refreshNormalText!,
@@ -431,7 +455,7 @@ export default class ScrollComponent extends BaseScrollComponent {
         Animated.timing(this.state.prArrowDeg, {
             useNativeDriver: BaseItemAnimator.USE_NATIVE_DRIVER,
             toValue: 0,
-            duration: 100,
+            duration: 125,
             easing: Easing.inOut(Easing.quad),
         }).start();
     }
@@ -439,7 +463,7 @@ export default class ScrollComponent extends BaseScrollComponent {
     private _getContentHeight(): number {
         let height: number = SCREEN_HEIGHT;
         if (this.props.dataProvider.getSize() > 0 && this.props.dataProvider.getAllData()[0] === NO_DATA_PROVIDER) {
-            height = this._height;
+            height = this._height; // NO_DATA_PROVIDER 空数据状态执行组件高度
         } else {
             height = this.props.contentHeight < this._height ? this._height : this.props.contentHeight;
         }
@@ -465,7 +489,10 @@ export default class ScrollComponent extends BaseScrollComponent {
             this.props.onScroll(contentOffset.x, contentOffset.y, event);
         }
 
-        // 开启下拉刷新时执行
+        /**
+         * @todo: 下拉刷新&上拉加载
+         * @description: 下拉刷新动画判断 & 安装用户特殊滚动重置位置
+         */
         if (!this.props.isHorizontal && this.props.onRefresh) {
             // @ts-ignore
             const target = event.nativeEvent;
@@ -473,7 +500,7 @@ export default class ScrollComponent extends BaseScrollComponent {
 
             if (this.dragState) {
                 if (IOS) {
-                    if (y <= ~PULL_REFRESH_HEIGHT) {
+                    if (y <= ~PULL_REFRESH_HEIGHT + 10) {
                         this.upState();
 
                     } else {
@@ -488,7 +515,7 @@ export default class ScrollComponent extends BaseScrollComponent {
                     }
                 }
             } else {
-                // 用户快速滑动放手后 导致弹簧到顶部触发
+                // 用户快速滚动后冲到顶点结束刷新,不会回调外部onRefresh
                 if (y === 0 && ANDROID) {
                     this.setState({
                         prTitle: this.props.refreshLoadingText!,
@@ -516,13 +543,17 @@ export default class ScrollComponent extends BaseScrollComponent {
     };
 }
 
+/**
+ * @todo: 下拉刷新&上拉加载
+ * @description: 常量定义
+ */
 export const PULL_REFRESH_HEIGHT = 60;
 export const ANDROID_REFRESHING_HEIGHT = 0.5;
+export const ANDROID = Platform.OS === "android";
+export const IOS = Platform.OS === "ios";
 const NO_DATA_PROVIDER = "NO_DATA_PROVIDER";
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const SCREEN_HEIGHT = Dimensions.get("window").height;
-const ANDROID = Platform.OS === "android";
-const IOS = Platform.OS === "ios";
 const dateFormat = (dateTime: number, fmt: string) => {
     const date = new Date(dateTime);
 

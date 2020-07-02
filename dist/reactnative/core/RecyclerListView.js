@@ -89,10 +89,10 @@ var RecyclerListView = /** @class */ (function (_super) {
         //by the default item animator also changes the same positions which could lead to inconsistency. Hence, the base item animator which
         //does not perform any such animations will be used.
         _this._defaultItemAnimator = new ItemAnimator_1.BaseItemAnimator();
-        _this._refreshStatus = "refreshNormal"; // 刷新状态
-        _this._endDragPoint = 0; // 用户停止拖动点
-        _this._beginDragPoint = 0; // 用户开始拖动点
-        _this._momentumEndPoint = ScrollComponent_1.PULL_REFRESH_HEIGHT; // 惯性滚动 动画结束时 点位
+        /**
+         * @todo: 下拉刷新&上拉加载
+         */
+        _this._refreshStatus = "refreshNormal";
         _this.scrollToOffset = function (x, y, animate) {
             if (animate === void 0) { animate = false; }
             if (_this._scrollComponent) {
@@ -106,20 +106,21 @@ var RecyclerListView = /** @class */ (function (_super) {
             }
         };
         /**
-         * @todo: 上拉刷新&下拉加载
-         * @function: 终止x下拉刷新
+         * @todo: 下拉刷新&上拉加载
+         * @function: 终止下拉刷新
          */
         _this.onRefreshEnd = function () {
             if (_this._scrollComponent) {
                 _this._scrollComponent.onRefreshEnd();
                 _this._refreshStatus = "refreshNormal";
-                _this._pendingScrollToOffset = { x: 0, y: 60 };
+                // 内容偏移到默认位置
+                _this._pendingScrollToOffset = { x: 0, y: ScrollComponent_1.ANDROID ? 60 : 0 };
                 _this._processInitialOffset();
             }
         };
         /**
-         * @todo: 上拉刷新&下拉加载
-         * @function: 终止x下拉刷新
+         * @todo: 下拉刷新&上拉加载
+         * @function: 开始下拉刷新
          */
         _this.onRefreshing = function () {
             if (_this._scrollComponent) {
@@ -127,17 +128,22 @@ var RecyclerListView = /** @class */ (function (_super) {
                 _this._refreshStatus = "refreshLoading";
             }
         };
+        /**
+         * @todo: 下拉刷新&上拉加载
+         * @function: 滚动动画结束回调
+         */
         _this.onMomentumScrollEnd = function (e) {
             var target = e.nativeEvent;
             var y = target.contentOffset.y;
-            _this._momentumEndPoint = y;
-            if (y >= ScrollComponent_1.PULL_REFRESH_HEIGHT && y < 90) {
-                _this._refreshStatus = "refreshNormal";
+            if (ScrollComponent_1.ANDROID) {
+                if (y >= ScrollComponent_1.PULL_REFRESH_HEIGHT && y < 90) {
+                    _this._refreshStatus = "refreshNormal";
+                }
+                if (y > ScrollComponent_1.ANDROID_REFRESHING_HEIGHT && y <= ScrollComponent_1.PULL_REFRESH_HEIGHT) {
+                    _this._refreshStatus = "refreshNormal";
+                }
             }
-            if (y > ScrollComponent_1.ANDROID_REFRESHING_HEIGHT && y <= ScrollComponent_1.PULL_REFRESH_HEIGHT) {
-                _this._refreshStatus = "refreshNormal";
-            }
-            console.log("滚动停止点:-------", y);
+            // console.log("滚动动画结束停止点>>>>", y);
         };
         _this._onSizeChanged = function (layout) {
             if (!_this.props.canChangeSize && _this.props.layoutSize) {
@@ -296,7 +302,7 @@ var RecyclerListView = /** @class */ (function (_super) {
         return layoutManager ? layoutManager.getLayouts()[index] : undefined;
     };
     RecyclerListView.prototype.scrollToTop = function (animate) {
-        if (this.props.onRefresh && react_native_1.Platform.OS === "android") {
+        if (this.props.onRefresh && !this.props.isHorizontal && ScrollComponent_1.ANDROID) {
             this.scrollToOffset(0, ScrollComponent_1.PULL_REFRESH_HEIGHT, animate);
             return;
         }
@@ -347,8 +353,8 @@ var RecyclerListView = /** @class */ (function (_super) {
         });
     };
     /**
-     * @todo: 上拉刷新&下拉加载
-     * @function: 上拉加载更多
+     * @todo: 下拉刷新&上拉加载
+     * @function: 开始加载更多
      */
     RecyclerListView.prototype.onLoadingMore = function () {
         if (this._scrollComponent) {
@@ -357,7 +363,7 @@ var RecyclerListView = /** @class */ (function (_super) {
         }
     };
     /**
-     * @todo: 上拉刷新&下拉加载
+     * @todo: 下拉刷新&上拉加载
      * @function: 上拉加载正常状态
      */
     RecyclerListView.prototype.onLoadNormal = function () {
@@ -366,7 +372,7 @@ var RecyclerListView = /** @class */ (function (_super) {
         }
     };
     /**
-     * @todo: 上拉刷新&下拉加载
+     * @todo: 下拉刷新&上拉加载
      * @function: 没有数据可加载
      */
     RecyclerListView.prototype.onNoDataToLoad = function () {
@@ -374,23 +380,34 @@ var RecyclerListView = /** @class */ (function (_super) {
             this._scrollComponent.onNoDataToLoad();
         }
     };
-    // 手指未离开
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 用户开始拖拽
+     */
     RecyclerListView.prototype.onScrollBeginDrag = function (e) {
         var target = e.nativeEvent;
         var y = target.contentOffset.y;
         this._refreshStatus = "drag";
-        this._beginDragPoint = y;
         // @ts-ignore
         if (this.props.onScrollBeginDrag) {
             // @ts-ignore
             this.props.onScrollBeginDrag(e);
         }
+        // console.log("偏移数据&开始触摸点---", y);
     };
-    // 手指离开
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 用户停止拖拽
+     */
     RecyclerListView.prototype.onScrollEndDrag = function (e) {
         var target = e.nativeEvent;
         var y = target.contentOffset.y;
-        this._endDragPoint = y;
+        if (ScrollComponent_1.IOS) {
+            if (this._refreshStatus === "drag" && y <= ~ScrollComponent_1.PULL_REFRESH_HEIGHT + 10) {
+                this._refreshStatus = "refreshLoading";
+            }
+        }
+        // console.log("偏移数据&结束触摸点---", y);
     };
     RecyclerListView.prototype.renderCompat = function () {
         //TODO:Talha
@@ -420,27 +437,25 @@ var RecyclerListView = /** @class */ (function (_super) {
     RecyclerListView.prototype._processInitialOffset = function () {
         var _this = this;
         if (this._pendingScrollToOffset) {
+            /**
+             * @todo: 下拉刷新&上拉加载
+             * @description: 当数据变化时源库回调此函数确定内容偏移位置
+             */
             var offset_1 = this._pendingScrollToOffset;
-            // tslint:disable-next-line:no-console
-            console.log("偏移数据&偏移点---", offset_1.y);
-            // tslint:disable-next-line:no-console
-            console.log("偏移数据&开始触摸点---", this._beginDragPoint);
-            // tslint:disable-next-line:no-console
-            console.log("偏移数据&结束触摸点---", this._endDragPoint);
-            if (this.props.onRefresh && react_native_1.Platform.OS === "android" && !this.props.isHorizontal) {
-                // tslint:disable-next-line:no-console
-                console.log("偏移数据&当前刷新状态值----", this._refreshStatus);
-                // tslint:disable-next-line:no-console
-                console.log("滚动到最后高度------------>>>>>", this._momentumEndPoint);
-                if (this._refreshStatus === "refreshNormal") {
-                    offset_1.y = ScrollComponent_1.PULL_REFRESH_HEIGHT;
+            // console.log("偏移数据&偏移点---", offset.y);
+            // console.log("偏移数据&当前刷新状态值----", this._refreshStatus);
+            if (this.props.onRefresh && !this.props.isHorizontal) {
+                if (ScrollComponent_1.ANDROID) {
+                    if (this._refreshStatus === "refreshNormal") {
+                        offset_1.y = ScrollComponent_1.PULL_REFRESH_HEIGHT;
+                    }
+                    else if (this._refreshStatus === "refreshLoading") {
+                        offset_1.y = ScrollComponent_1.ANDROID_REFRESHING_HEIGHT;
+                    }
                 }
-                else if (this._refreshStatus === "refreshLoading") {
-                    offset_1.y = ScrollComponent_1.ANDROID_REFRESHING_HEIGHT;
+                if (ScrollComponent_1.IOS && this._refreshStatus === "refreshLoading") {
+                    offset_1.y = ~ScrollComponent_1.PULL_REFRESH_HEIGHT;
                 }
-            }
-            if (this.props.onRefresh && react_native_1.Platform.OS === "ios" && !this.props.isHorizontal && offset_1.y === 0) {
-                offset_1.y = ~ScrollComponent_1.PULL_REFRESH_HEIGHT;
             }
             this._pendingScrollToOffset = null;
             if (this.props.isHorizontal) {
@@ -449,10 +464,9 @@ var RecyclerListView = /** @class */ (function (_super) {
             else {
                 offset_1.x = 0;
             }
-            // tslint:disable-next-line:no-console
-            console.log("偏移数据&偏移实际点---", offset_1.y);
+            // console.log("偏移数据&偏移实际点----", offset.y);
             setTimeout(function () {
-                _this.scrollToOffset(offset_1.x, offset_1.y, false);
+                _this.scrollToOffset(offset_1.x, offset_1.y, ScrollComponent_1.IOS);
             }, 0);
         }
     };
@@ -555,12 +569,15 @@ var RecyclerListView = /** @class */ (function (_super) {
         if (props.onVisibleIndicesChanged) {
             this._virtualRenderer.attachVisibleItemsListener(props.onVisibleIndicesChanged);
         }
-        // 安卓首次挂载 需要偏移60高度 隐藏掉刷新组件
+        /**
+         * @todo: 下拉刷新&上拉加载
+         * @description: 安卓首次挂载 需要偏移60高度 隐藏掉刷新组件
+         */
         var initialOffset = 0;
         if (props.initialOffset !== 0) {
             initialOffset = props.initialOffset;
         }
-        else if (props.onRefresh && react_native_1.Platform.OS === "android") {
+        else if (props.onRefresh && !this.props.isHorizontal && ScrollComponent_1.ANDROID) {
             initialOffset = ScrollComponent_1.PULL_REFRESH_HEIGHT;
         }
         this._params = {
@@ -647,9 +664,14 @@ var RecyclerListView = /** @class */ (function (_super) {
                 if (windowBound - lastOffset <= ts_object_utils_1.Default.value(this.props.onEndReachedThreshold, 0)) {
                     if (this.props.onEndReached && !this._onEndReachedCalled) {
                         this._onEndReachedCalled = true;
+                        /**
+                         * @todo: 下拉刷新&上拉加载
+                         * @param: useLoadMore
+                         * @description: 开放接口判断onEndReached回调时机
+                         */
                         if (this.props.useLoadMore) {
                             this.props.onEndReached();
-                        } // 开放接口判断何时不处理上拉加载
+                        }
                     }
                 }
                 else {
@@ -667,7 +689,7 @@ var RecyclerListView = /** @class */ (function (_super) {
         onEndReachedThreshold: 0.01,
         renderAheadOffset: IS_WEB ? 1000 : 250,
         /**
-         * 下拉刷新&上拉加载
+         * @todo: 下拉刷新&上拉加载
          */
         refreshReleaseText: "释放更新",
         refreshLoadingText: "加载中...",
@@ -675,6 +697,8 @@ var RecyclerListView = /** @class */ (function (_super) {
         loadMoreNormalText: "上拉加载",
         loadMoreNoDataText: "已全部加载",
         loadMoreLoadingText: "加载更多...",
+        refreshIndicatorColor: "#488eff",
+        loadMoreIndicatorColor: "#488eff",
         indicatorArrowImg: {
             style: {},
             url: "",

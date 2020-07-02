@@ -41,6 +41,8 @@ import { ComponentCompat } from "../utils/ComponentCompat";
 import ScrollComponent, {
     PULL_REFRESH_HEIGHT,
     ANDROID_REFRESHING_HEIGHT,
+    IOS,
+    ANDROID,
 } from "../platform/reactnative/scrollcomponent/ScrollComponent";
 import ViewRenderer from "../platform/reactnative/viewrenderer/ViewRenderer";
 import { Platform, ScrollViewProps, StyleProp, ViewStyle } from "react-native";
@@ -116,7 +118,7 @@ export interface RecyclerListViewProps {
     scrollViewProps?: ScrollViewProps; // 库源类型补充
     applyWindowCorrection?: (offsetX: number, offsetY: number, windowCorrection: WindowCorrection) => void;
     /**
-     * 下拉刷新&上拉加载
+     * @todo: 下拉刷新&上拉加载
      */
     flag?: string;
     onLoadingMore?: () => void;
@@ -143,7 +145,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         onEndReachedThreshold: 0.01,
         renderAheadOffset: IS_WEB ? 1000 : 250,
         /**
-         * 下拉刷新&上拉加载
+         * @todo: 下拉刷新&上拉加载
          */
         refreshReleaseText: "释放更新",
         refreshLoadingText: "加载中...",
@@ -151,6 +153,8 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         loadMoreNormalText: "上拉加载",
         loadMoreNoDataText: "已全部加载",
         loadMoreLoadingText: "加载更多...",
+        refreshIndicatorColor: "#488eff",
+        loadMoreIndicatorColor: "#488eff",
         indicatorArrowImg: {
             style: {},
             url: "",
@@ -192,10 +196,10 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     //by the default item animator also changes the same positions which could lead to inconsistency. Hence, the base item animator which
     //does not perform any such animations will be used.
     private _defaultItemAnimator: ItemAnimator = new BaseItemAnimator();
-    private _refreshStatus: string = "refreshNormal"; // 刷新状态
-    private _endDragPoint = 0; // 用户停止拖动点
-    private _beginDragPoint = 0; // 用户开始拖动点
-    private _momentumEndPoint = PULL_REFRESH_HEIGHT; // 惯性滚动 动画结束时 点位
+    /**
+     * @todo: 下拉刷新&上拉加载
+     */
+    private _refreshStatus: string = "refreshNormal";
 
     constructor(props: P, context?: any) {
         super(props, context);
@@ -297,7 +301,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     }
 
     public scrollToTop(animate?: boolean): void {
-        if (this.props.onRefresh && Platform.OS === "android") {
+        if (this.props.onRefresh && !this.props.isHorizontal && ANDROID) {
             this.scrollToOffset(0, PULL_REFRESH_HEIGHT, animate);
             return;
         }
@@ -368,21 +372,22 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     }
 
     /**
-     * @todo: 上拉刷新&下拉加载
-     * @function: 终止x下拉刷新
+     * @todo: 下拉刷新&上拉加载
+     * @function: 终止下拉刷新
      */
     public onRefreshEnd = (): void => {
         if (this._scrollComponent) {
             this._scrollComponent.onRefreshEnd();
             this._refreshStatus = "refreshNormal";
-            this._pendingScrollToOffset = { x: 0, y: 60 };
+            // 内容偏移到默认位置
+            this._pendingScrollToOffset = { x: 0, y: ANDROID ? 60 : 0 };
             this._processInitialOffset();
         }
     };
 
     /**
-     * @todo: 上拉刷新&下拉加载
-     * @function: 终止x下拉刷新
+     * @todo: 下拉刷新&上拉加载
+     * @function: 开始下拉刷新
      */
     public onRefreshing = (): void => {
         if (this._scrollComponent) {
@@ -392,8 +397,8 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     };
 
     /**
-     * @todo: 上拉刷新&下拉加载
-     * @function: 上拉加载更多
+     * @todo: 下拉刷新&上拉加载
+     * @function: 开始加载更多
      */
     public onLoadingMore(): void {
         if (this._scrollComponent) {
@@ -403,7 +408,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     }
 
     /**
-     * @todo: 上拉刷新&下拉加载
+     * @todo: 下拉刷新&上拉加载
      * @function: 上拉加载正常状态
      */
     public onLoadNormal(): void {
@@ -413,7 +418,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     }
 
     /**
-     * @todo: 上拉刷新&下拉加载
+     * @todo: 下拉刷新&上拉加载
      * @function: 没有数据可加载
      */
     public onNoDataToLoad(): void {
@@ -422,40 +427,55 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         }
     }
 
-    // 手指未离开
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 用户开始拖拽
+     */
     public onScrollBeginDrag(e: any): void {
         const target = e.nativeEvent;
         const y = target.contentOffset.y;
-
         this._refreshStatus = "drag";
-        this._beginDragPoint = y;
 
         // @ts-ignore
         if (this.props.onScrollBeginDrag) {
             // @ts-ignore
             this.props.onScrollBeginDrag(e);
         }
+        // console.log("偏移数据&开始触摸点---", y);
     }
 
-    // 手指离开
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 用户停止拖拽
+     */
     public onScrollEndDrag(e: any): void {
         const target = e.nativeEvent;
         const y = target.contentOffset.y;
-        this._endDragPoint = y;
+        if (IOS) {
+            if (this._refreshStatus === "drag" && y <= ~PULL_REFRESH_HEIGHT + 10) {
+                this._refreshStatus = "refreshLoading";
+            }
+        }
+        // console.log("偏移数据&结束触摸点---", y);
     }
 
+    /**
+     * @todo: 下拉刷新&上拉加载
+     * @function: 滚动动画结束回调
+     */
     public onMomentumScrollEnd = (e: any): void => {
         const target = e.nativeEvent;
         const y = target.contentOffset.y;
-        this._momentumEndPoint = y;
 
-        if (y >= PULL_REFRESH_HEIGHT && y < 90) {
-            this._refreshStatus = "refreshNormal";
+        if (ANDROID) {
+            if (y >= PULL_REFRESH_HEIGHT && y < 90) {
+                this._refreshStatus = "refreshNormal";
+            }
+            if (y > ANDROID_REFRESHING_HEIGHT && y <= PULL_REFRESH_HEIGHT) {
+                this._refreshStatus = "refreshNormal";
+            }
         }
-        if (y > ANDROID_REFRESHING_HEIGHT && y <= PULL_REFRESH_HEIGHT) {
-            this._refreshStatus = "refreshNormal";
-        }
-        console.log("滚动停止点:-------", y);
+        // console.log("滚动动画结束停止点>>>>", y);
     };
 
     public renderCompat(): JSX.Element {
@@ -503,39 +523,38 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
 
     private _processInitialOffset(): void {
         if (this._pendingScrollToOffset) {
-            const offset = this._pendingScrollToOffset;
-            // tslint:disable-next-line:no-console
-            console.log("偏移数据&偏移点---", offset.y);
-            // tslint:disable-next-line:no-console
-            console.log("偏移数据&开始触摸点---", this._beginDragPoint);
-            // tslint:disable-next-line:no-console
-            console.log("偏移数据&结束触摸点---", this._endDragPoint);
 
-            if (this.props.onRefresh && Platform.OS === "android" && !this.props.isHorizontal) {
-                // tslint:disable-next-line:no-console
-                console.log("偏移数据&当前刷新状态值----", this._refreshStatus);
-                // tslint:disable-next-line:no-console
-                console.log("滚动到最后高度------------>>>>>", this._momentumEndPoint);
-                if (this._refreshStatus === "refreshNormal") {
-                    offset.y = PULL_REFRESH_HEIGHT;
-                } else if (this._refreshStatus === "refreshLoading") {
-                    offset.y = ANDROID_REFRESHING_HEIGHT;
+            /**
+             * @todo: 下拉刷新&上拉加载
+             * @description: 当数据变化时源库回调此函数确定内容偏移位置
+             */
+            const offset = this._pendingScrollToOffset;
+            // console.log("偏移数据&偏移点---", offset.y);
+            // console.log("偏移数据&当前刷新状态值----", this._refreshStatus);
+
+            if (this.props.onRefresh && !this.props.isHorizontal) {
+                if (ANDROID) {
+                    if (this._refreshStatus === "refreshNormal") {
+                        offset.y = PULL_REFRESH_HEIGHT;
+                    } else if (this._refreshStatus === "refreshLoading") {
+                        offset.y = ANDROID_REFRESHING_HEIGHT;
+                    }
+                }
+
+                if (IOS && this._refreshStatus === "refreshLoading") {
+                    offset.y = ~PULL_REFRESH_HEIGHT;
                 }
             }
 
-            if (this.props.onRefresh && Platform.OS === "ios" && !this.props.isHorizontal && offset.y === 0) {
-                offset.y = ~PULL_REFRESH_HEIGHT;
-            }
             this._pendingScrollToOffset = null;
             if (this.props.isHorizontal) {
                 offset.y = 0;
             } else {
                 offset.x = 0;
             }
-            // tslint:disable-next-line:no-console
-            console.log("偏移数据&偏移实际点---", offset.y);
+            // console.log("偏移数据&偏移实际点----", offset.y);
             setTimeout(() => {
-                this.scrollToOffset(offset.x, offset.y, false);
+                this.scrollToOffset(offset.x, offset.y, IOS);
             }, 0);
         }
     }
@@ -674,11 +693,14 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         if (props.onVisibleIndicesChanged) {
             this._virtualRenderer.attachVisibleItemsListener(props.onVisibleIndicesChanged!);
         }
-        // 安卓首次挂载 需要偏移60高度 隐藏掉刷新组件
+        /**
+         * @todo: 下拉刷新&上拉加载
+         * @description: 安卓首次挂载 需要偏移60高度 隐藏掉刷新组件
+         */
         let initialOffset = 0;
         if (props.initialOffset !== 0) {
             initialOffset = props.initialOffset!;
-        } else if (props.onRefresh && Platform.OS === "android") {
+        } else if (props.onRefresh && !this.props.isHorizontal && ANDROID) {
             initialOffset = PULL_REFRESH_HEIGHT;
         }
         this._params = {
@@ -825,9 +847,14 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                 if (windowBound - lastOffset <= Default.value<number>(this.props.onEndReachedThreshold, 0)) {
                     if (this.props.onEndReached && !this._onEndReachedCalled) {
                         this._onEndReachedCalled = true;
+                        /**
+                         * @todo: 下拉刷新&上拉加载
+                         * @param: useLoadMore
+                         * @description: 开放接口判断onEndReached回调时机
+                         */
                         if (this.props.useLoadMore) {
                             this.props.onEndReached();
-                        } // 开放接口判断何时不处理上拉加载
+                        }
                     }
                 } else {
                     this._onEndReachedCalled = false;
